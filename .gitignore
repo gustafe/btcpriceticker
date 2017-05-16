@@ -1,0 +1,18 @@
+*.log
+*.db
+*.dmp
+test-*
+ticker.cgi-*
+\#*
+*.zip
+err*
+out*
+
+# dirs
+
+/About-page/build
+/BitcoinDaysDestroyed
+/Changetip-data
+/PHPliteadmin
+/old_data
+/weekly-analysis
