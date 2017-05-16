@@ -1,0 +1,10 @@
+https://blockexplorer.com/api
+
+/api/status?q=getBlockCount {"blockcount":415668}
+/api/block-index/415668 {"blockHash":"0000000000000000044a39dec600ea4924f81eb8f5ea0001d084d7eabf39ee64"}
+/api/block/0000000000000000044a39dec600ea4924f81eb8f5ea0001d084d7eabf39ee64
+{....,"time":1465568060,....}
+
+Earliest date 2010-07-17 - 68704
+
+difficulty cycle: 2016

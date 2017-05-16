@@ -1,0 +1,13 @@
+# About my little Bitcoin price tracker
+
+This web script reads current and historical prices from [Bitcoinaverage](https://bitcoinaverage.com/markets#USD) and presents the prices from some selected points in time.
+
+There's a "semi-logarithmic" timescale of 3 day, 1 week, 1 month (30 days), 6 months, and 1 year. In addition, price from 1 Jan of the current year, this year's high, and this year's low are included. 
+
+I've also included the current (Sep 2014) record high price from Nov 2013.
+
+In the data files from Bitcoinaverage, historical days have average, high, and low volume-weighted prices. The prices in the tables are average for each day, except of the highs and lows mentioned above.
+
+
+
+

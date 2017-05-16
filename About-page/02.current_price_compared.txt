@@ -1,0 +1,17 @@
+## <a id="current"></a>Current price compared to historical prices
+
+### Percentage calculations
+
+The percentage in the table is 
+
+    percentage = ( current_price - historical_price ) / historical_price * 100
+
+This means that the current price is calculated using the formula
+
+    current_price = historical_price * (1 + percentage/100)
+
+### Market cap
+
+The number of coins at a certain date is calculated using extrapolated values from [this page](https://en.bitcoin.it/wiki/Controlled_supply) and multiplied with the price.
+
+Note that this is a naive definition of "market cap" and not really applicable to Bitcoin, as it's not a share in a company. However it's widely used as a sort of benchmark within the community.

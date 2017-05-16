@@ -1,0 +1,89 @@
+<!DOCTYPE html
+	  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+	   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+<title>About the world's slowest BTC price ticker</title>
+<link type="text/css" media="all" rel="stylesheet" href="http://gerikson.com/stylesheets/btcticker.css" />
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+</head>
+<body>
+<h1>About my little Bitcoin price tracker</h1>
+
+<p>This web script reads current and historical prices from <a href="https://bitcoinaverage.com/markets#USD">Bitcoinaverage</a> and presents the prices from some selected points in time.</p>
+
+<p>There's a "semi-logarithmic" timescale of 3 day, 1 week, 1 month (30 days), 6 months, and 1 year. In addition, price from 1 Jan of the current year, this year's high, and this year's low are included. </p>
+
+<p>I've also included the current (Sep 2014) record high price from Nov 2013.</p>
+
+<p>In the data files from Bitcoinaverage, historical days have average, high, and low volume-weighted prices. The prices in the tables are average for each day, except of the highs and lows mentioned above.</p>
+
+<h2><a id="current"></a>Current price compared to historical prices</h2>
+
+<h3>Percentage calculations</h3>
+
+<p>The percentage in the table is </p>
+
+<pre><code>percentage = ( current_price - historical_price ) / historical_price * 100
+</code></pre>
+
+<p>This means that the current price is calculated using the formula</p>
+
+<pre><code>current_price = historical_price * (1 + percentage/100)
+</code></pre>
+
+<h3>Market cap</h3>
+
+<p>The number of coins at a certain date is calculated using extrapolated values from <a href="https://en.bitcoin.it/wiki/Controlled_supply">this page</a> and multiplied with the price.</p>
+
+<p>Note that this is a naive definition of "market cap" and not really applicable to Bitcoin, as it's not a share in a company. However it's widely used as a sort of benchmark within the community.</p>
+
+<h2><a id='extrapolated'></a>Historical prices compared to extrapolated trends</h2>
+
+<p>It's often postulated that Bitcoin's underlying price development is
+exponential (or rather, that it's in the "exponential" phase of a
+S-shaped saturation curve). To compare this, I calculated a best-fit
+line approximation against the natural log of the the average
+historical price, and this calculated price is presented compared to
+the actual prices.</p>
+
+<p>I've also compared to a linear approximation, using the same
+methodology but of course using the straight numbers.</p>
+
+<p>I've excluded all data newer than 3 days. The coefficients are updated
+daily. The values are shown in the headers.</p>
+
+<p>I've used Julian dates to deal with the days, mostly because SQLite has built-in support for the datatype.</p>
+
+<h2><a id="future"></a> Future extrapolations</h2>
+
+<h3>Red Anniversary</h3>
+
+<p>A received truth is that "no-one has ever lost money holding Bitcoin for one calendar year". We're a few months from testing that hypothesis. On the days leading up to 29 Nov 2014, the price rocketed from $130 to $1,100. </p>
+
+<p>As there's often no direct average price that's the same as the
+current price, I've extrapolated the current price based on the slope
+of the price increase. I've then added 365 days to that extrapolated
+time and called that "red anniversary". If there's no new record high
+before 29 Nov 2014, a buyer of Bitcoin will be "in the red" after a
+year.</p>
+
+<h3>Future prices based on linear trend from Nov 2013 peak</h3>
+
+<p>This line is based on averages since Nov 2013. </p>
+
+<h2>FAQ</h2>
+
+<p>Q: why Perl? Why CGI? Are you some kind of Luddite?</p>
+
+<p>A: Yes, it's what I'm most familiar with, and what's available on the server I'm using. I'm more interested in dealing with the actual data analysis, and I'm using tools I know about to deal with it.</p>
+
+<p>Q: I love this page! Do you take Bitcoin donations?</p>
+
+<p>A: I don't have a Bitcoin wallet, but I have a tip jar on Reddit. You can use that if you want. But I'd prefer if you'd donate to a charity instead. I don't need the money.</p>
+
+<h2><a id="Contact"></a> Contact</h2>
+
+<p>Questions? Comments? I'm <code>gerikson</code> on Twitter and Reddit.</p>
+</body>
+</html>

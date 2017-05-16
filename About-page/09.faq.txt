@@ -1,0 +1,9 @@
+## FAQ
+
+Q: why Perl? Why CGI? Are you some kind of Luddite?
+
+A: Yes, it's what I'm most familiar with, and what's available on the server I'm using. I'm more interested in dealing with the actual data analysis, and I'm using tools I know about to deal with it.
+
+Q: I love this page! Do you take Bitcoin donations?
+
+A: I don't have a Bitcoin wallet, but I have a tip jar on Reddit. You can use that if you want. But I'd prefer if you'd donate to a charity instead. I don't need the money.

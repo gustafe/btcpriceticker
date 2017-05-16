@@ -1,0 +1,16 @@
+## <a id='extrapolated'></a>Historical prices compared to extrapolated trends
+
+It's often postulated that Bitcoin's underlying price development is
+exponential (or rather, that it's in the "exponential" phase of a
+S-shaped saturation curve). To compare this, I calculated a best-fit
+line approximation against the natural log of the the average
+historical price, and this calculated price is presented compared to
+the actual prices.
+
+I've also compared to a linear approximation, using the same
+methodology but of course using the straight numbers.
+
+I've excluded all data newer than 3 days. The coefficients are updated
+daily. The values are shown in the headers.
+
+I've used Julian dates to deal with the days, mostly because SQLite has built-in support for the datatype.
