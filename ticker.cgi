@@ -319,27 +319,6 @@ sub number_of_bitcoins {
     
 }
 sub number_of_bitcoins_old {
-    # input: julian date
-    # output: number of bitcoins mined since date
-    my ($jd) = @_;
-
-    # https://en.bitcoin.it/wiki/Controlled_supply
-    my %historical = 
-      (
-       '2009-01-09 02:54:25'=>{coins=>50,block=>1,note=>'Genesis block'},
-#       '2009-07-22 19:32:20'=>{coins=>1_000_000,block=>19_999},
-       '2010-04-22 10:15:34'=>{coins=>2_625_000,block=>52_500},
-       '2011-01-28 09:41:47'=>{block=> 105_000,coins=>	5_250_000},
-       '2011-12-14 15:24:37'=>{block=> 157_500,coins=>	7_875_000},
-
-    # 25 BTC reward period
-       '2012-11-28 15:24:38'=>{ block=> 210_000 ,coins=>10_500_000},
-       '2013-10-09 03:28:22'=>{ block=> 262_500,coins=>	11_812_500},
-       '2014-08-11 03:06:05'=>{ block=> 315_000,coins=>	13_125_000},
-
-       # 14m bitcoins at around 2015-03-30 21:45 UTC,
-       # http://blockexplorer.com/b/350000
-       '2015-03-30 22:17:14'=>{block=> 350_000,coins=>14_000_000},
        # next halving, block 420_000
     # http://bitcoinclock.com/ has predicted date and time
     # Checked (UTC)	Predicted (UTC)		Predicted Julian
@@ -353,93 +332,12 @@ sub number_of_bitcoins_old {
        # 2016-05-11	2016-07-10 18:03:03
        # 2016-05-20	2016-07-10 20:57:00
        # 2016-06-09	2016-07-10 12:04:33
-       # 2016-06-13	2016-07-10 05:52:12
-       '2016-07-10 05:52:12'=>{block =>    420_000,
-			       coins => 15_750_000,
-			       note  => '2016 halving'},
-
-       # initial guess based on time from 210 halving
-       '2020-02-20 08:44:29'=>{block => 630_000,
-			       coins => 18_375_000,
-			       note => '2020 halving'},
-       # generated 2015-03-30 using script
-       # 'generate_historical_data_no_of_coins.pl'
-
-       # http://blockexplorer.com/b/270000
-	    '2013-11-16 22:09:06' => {block => 270000, coins => 12000000},
-       # http://blockexplorer.com/b/280000
-	    '2014-01-12 01:35:23' => {block => 280000, coins => 12250000},
-       # http://blockexplorer.com/b/290000
-	    '2014-03-11 08:27:57' => {block => 290000, coins => 12500000},
-       # http://blockexplorer.com/b/300000
-	    '2014-05-10 06:32:34' => {block => 300000, coins => 12750000},
-       # http://blockexplorer.com/b/310000
-	    '2014-07-09 23:04:51' => {block => 310000, coins => 13000000},
-       # http://blockexplorer.com/b/320000
-	    '2014-09-10 13:55:18' => {block => 320000, coins => 13250000},
-       # http://blockexplorer.com/b/330000
-	    '2014-11-14 16:40:09' => {block => 330000, coins => 13500000},
-       # http://blockexplorer.com/b/340000
-	    '2015-01-22 04:08:07' => {block => 340000, coins => 13750000},
-       # http://blockexplorer.com/b/350000
-       '2015-03-30 22:17:14' => {block => 350000, coins => 14000000},
-       # http://blockexplorer.com/b/360000
-       '2015-06-08 14:08:27' => {block => 360000, coins => 14250000},
-       # http://blockexplorer.com/b/370000
-       '2015-08-15 18:12:49' => {block => 370000, coins => 14500000},
-       # http://blockexplorer.com/b/380000
-       '2015-10-22 06:08:01' => {block => 380000, coins => 14750000},
-     # http://blockexplorer.com/b/390000
-       '2015-12-24 17:33:51' => {block=>390000, coins => 15000000},
-     # http://blockexplorer.com/b/400000
-       '2016-02-25 16:24:44' => {block=>400000, coins => 15250000},
-     # http://blockexplorer.com/b/410000
-       '2016-05-03 07:11:32'=> {block=>410000, coins => 15500000},
-# http://blockexplorer.com/b/430000 => {block => 430000, coins => 15875000.0},
-# http://blockexplorer.com/b/440000 => {block => 440000, coins => 16000000.0},
-
-      );
-
-    # generate the data table we're going to use from the source hash
-    # %historical
-    my %Data;
-    foreach my $ts (keys %historical) {
-	    if ( $ts =~ m/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/ ) {
-	my $julian = DateTime->new(year=>$1,month=>$2,day=>$3,
-			       hour=>$4,minute=>$5, second=>$6)->jd();
-	$Data{$julian} = $historical{$ts}->{coins};
-    }
-	}
-
-
-    my $min_jd = min keys %Data;
-    my $max_jd = max keys %Data;
-
-    if ( $jd > $max_jd or $jd < $min_jd ) {
-	return undef;
-    }
-    # exact value?
-    if ( exists $Data{$jd} ) {
-	return $Data{$jd};
-    }
-
-    # find between which historical values input lies
-    my $jd_2 = first { $_ > $jd } sort keys %Data;
-    my $jd_1 = first { $_ < $jd } reverse sort keys %Data;
-
-    # number of coins for this segment is a right triangle with base
-    # $jd_2-$jd_1, resting on a rectangle of height
-    # $historical{$jd1}. The number we want is the height of the
-    # triangle at $jd_2, proportional to the distance between $jd_1
-    # and $jd
-
-    my $B = $Data{$jd_1};
-    my $h = $Data{$jd_2}- $B;
-    my $x = ($jd - $jd_1)/($jd_2 - $jd_1) * $h;
-    return $x+$B;
-
-#    print "$jd is between $jd_1 and $jd_2\n";
-
+    # 2016-06-13	2016-07-10 05:52:12
+    # 2016-06-28	2016-07-09 17:59:50
+    # 2016-07-04        2016-07-09 10:47:34
+    # 2016-07-05	2016-07-09 11:47:44
+    # 2016-07-08	2016-07-09 13:03:29
+    # 2016-07-09	2016-07-09 16:46:13
 }
 
 
@@ -482,6 +380,7 @@ sub calc_price_volume {
 	    $sub_count++;
 	}
     }
+    $sub_vol = $sub_vol ? $sub_vol : 0.001;
     push @$result, {exch=>"others",
 		    last=>sprintf("%.02f",$sub_priceXvol/$sub_vol),
 		    vol=>sprintf("%.02f",$sub_vol),
@@ -492,12 +391,17 @@ sub calc_price_volume {
     return $result;
 }
 
+sub by_number { # http://perlmaven.com/sorting-mixed-strings
+    my ( $anum ) = $a =~ /(\d+)/;
+    my ( $bnum ) = $b =~ /(\d+)/;
+    ( $anum || 0 ) <=> ( $bnum || 0 );
+}
 
 ### OUTPUT FUNCTIONS ########################################
 
 my $nf = new Number::Format;
 my $api_down = 0;
-my $api_down_text = "Can't get price right now, please check back later!";
+my $api_down_text = "Site down for the time being.";
 sub markdown_out {
     my ($D) = @_;
     print header('text/plain');
@@ -512,7 +416,7 @@ sub markdown_out {
     ### check size of fields: label, date, average, change, percentage
     my @rows;
     my @max = (0,0,0,0,0);
-    foreach my $tag ( sort {$a cmp $b} keys %$D ) {
+    foreach my $tag ( sort {$a <=> $b} keys %$D ) {
 #	next if $tag eq 'now';
 	next if $tag !~ m/^\d+/;
 	my $price= $D->{$tag}->{average};
@@ -576,7 +480,9 @@ sub console_out {
     my @max = (0,0,0,0,0,0,0);
 
     my %seen = ();
-    foreach my $tag ( sort {$a cmp $b} keys %$D ) {
+    # sorting strings of the type "123_tag" on the numerical value
+    # http://perlmaven.com/sorting-mixed-strings
+    foreach my $tag ( sort by_number keys %$D ) {
 	next if $tag !~ m/^\d+/;
 	my $price;
 	if ( $tag =~  'yhi$' or $tag =~ 'ath$' or $tag =~ 'zhi$') {
@@ -634,7 +540,7 @@ sub console_out {
     if ( $_24hmin < $_30dmin ) { $_30dmin = $_24hmin }
     # 1st row: 24h max | 30d max | 24h vol
 
-    printf(" [ %7s: %6.02f (%+6.02f) | %7s: %6.02f (%+7.02f) | %8s: %8s ]\n",
+    printf(" [ %7s: %6.02f (%+6.02f) | %7s: %6.02f (%+7.02f) | %7s: %8s ]\n",
 	   '24h max',$_24hmax, $price_now - $_24hmax,
 	   '30d max',$_30dmax, $price_now - $_30dmax,
 	   '24h vol',  large_num($total_vol)
@@ -717,7 +623,14 @@ my @agg_line; my $agg_idx =0;
 
     my $min = $current_ath;
     my $min_idx = 0;
-    foreach my $pct ( 70,65,60,55,50, 45, 40, 35,  30, 25,20,15,10,5, 2.5, 1) {
+    my @pct_range = (1, 2.5, 5);
+    for ( my $p = 10; $p<=200; $p += 5 ) {
+	push @pct_range, $p;
+    }
+    
+    foreach my $pct (reverse @pct_range) {
+
+      # (110,105,100,95,90,80,70,65,60,55,50,45,40,35,30,25,20,15,10,5,2.5,1) {
 	my $price = $current_ath*$pct/100;
 	push @pct_line, {price=>$price, pct => $pct };
 	if ( abs($price-$price_now) < $min ) {
@@ -733,8 +646,10 @@ my @agg_line; my $agg_idx =0;
 
     $min = $current_ath;
     $min_idx = 0;
+    my @value_range = (0.1, 0.25, 0.5);
+    push @value_range, (1..100);
     if ( defined $coins_now ) { 
-    foreach my $billions (14,13,12,11,10,9,8,7,6,5,4,3,2,1,0.5, 0.25,0.1) {
+    foreach my $billions (reverse @value_range) {
 	my $price = $billions * 1_000_000 * 1_000 / $coins_now;
 	push @agg_line, {price => $price, billions=>$billions};
 	if ( abs($price - $price_now) < $min ) {
@@ -999,7 +914,7 @@ sub html_out {
 
 
     my %seen = ();
-    foreach my $tag ( sort { $a cmp $b } keys %$D ) {
+    foreach my $tag ( sort  by_number keys %$D ) {
 	next if ( $tag !~ m/^\d+/ );
 	my $price;
 	if ( $tag =~  'yhi$' or $tag =~ 'ath$' or $tag =~ 'zhi$' ) {
@@ -1082,9 +997,12 @@ sub html_out {
     print p(a{-href=>"$about_page\#future"}, "About this section.");
 
     # red anniversary
+
     my $anniv = $D->{now}->{anniv};
     print h3({-class=>'redanniv'}, "Red Anniversary");
-    if ($anniv > time ) {	# it's in the future!
+    if ( !defined $anniv ) {
+	print p(qq/Currently no data is available for this feature./);
+    } elsif ($anniv > time ) {	# it's in the future!
 
     	print p(qq"If the current price of USD ", b($price_now),
 		qq/ is constant in the future, then 1 BTC purchased
@@ -1117,7 +1035,8 @@ sub html_out {
 		  dollar_parity => { p=> 1, label=> 'Dollar parity' },
 #		  current_ltc => {p=>45, label => 'Current Litecoin level (relative to peak)'},
  		  blaze => { p=> 420, label => "Blazin'"},
-		  nov2013hi2 => { p =>2*1132.26, label => "Twice Nov 2013 high"},
+		  mar2017hi3 => { p=>2*1286.75, label=>'Twice Mar 2017 high'},
+#		  nov2013hi2 => { p =>2*1132.26, label => "Twice Nov 2013 high"},
 		  ten_k => { p => 10_000, label => "USD 10k" },
 		  million => { p => 1_000_000, label => 'MOON' },
 		  twice_current => { p => 2*$price_now, label=>"Twice current price"},
@@ -1202,6 +1121,10 @@ sub html_out {
     print p("On 7 Jun 2014, Andreas M. Antonopoulos offered a white Mini Cooper for sale for 14BTC. At the time, the VWAP was USD 652.76 , so the sales price (assuming it went through) was ", sprintf("USD&nbsp;%s", $nf->format_number(14*652.76)),".");
     print p("Today, the same car is worth ", b(sprintf("USD&nbsp;%s", $nf->format_number(14*$price_now))),".");
     print p("(Source: ", a({href=>'https://twitter.com/aantonop/status/475048024453152768'}, " \@aantonop tweet"),'.)');
+
+    print h3("2016 Bitfinex hack");
+    print p("On 2 Aug 2016, the exchange Bitfinex announced they had suffered a security breach and that 119,756 BTC were stolen.");
+    print p("Current value of the coins is ", b(sprintf("USD&nbsp;%s", $nf->format_number(119_756 * $price_now))),".");
 	    
 
     print h2("Changelog");
@@ -1424,3 +1347,5 @@ __END__
 2015-08-24: Added a section for the famous "Bitcoin pizza"
 2015-08-26: Changed recent linear trend to last 90 days
 2015-11-16: Added section on the white Mini Cooper
+2016-06-16: Historical number of coins moved to DB instead of hardcoded values in script
+2016-08-03: Added information about the Aug 2016 Bitfinex hack
