@@ -416,7 +416,7 @@ sub markdown_out {
     ### check size of fields: label, date, average, change, percentage
     my @rows;
     my @max = (0,0,0,0,0);
-    foreach my $tag ( sort {$a <=> $b} keys %$D ) {
+    foreach my $tag ( sort by_number keys %$D ) {
 #	next if $tag eq 'now';
 	next if $tag !~ m/^\d+/;
 	my $price= $D->{$tag}->{average};
@@ -540,21 +540,21 @@ sub console_out {
     if ( $_24hmin < $_30dmin ) { $_30dmin = $_24hmin }
     # 1st row: 24h max | 30d max | 24h vol
 
-    printf(" [ %7s: %6.02f (%+6.02f) | %7s: %6.02f (%+7.02f) | %7s: %8s ]\n",
+    printf("[ %7s: %6.02f (%+7.02f) | %7s: %6.02f (%+7.02f) | %8s: %8s ]\n",
 	   '24h max',$_24hmax, $price_now - $_24hmax,
 	   '30d max',$_30dmax, $price_now - $_30dmax,
 	   '24h vol',  large_num($total_vol)
 	  );
 
     # 2nd row: 24h min | 30d min | Mcap
-    printf(" [ %7s: %6.02f (%+6.02f) | %7s: %6.02f (%+7.02f) | %8s: %8s ]\n",
+    printf("[ %7s: %6.02f (%+7.02f) | %7s: %6.02f (%+7.02f) | %8s: %8s ]\n",
 	   'min',$_24hmin, $price_now - $_24hmin,
 	   'min',$_30dmin, $price_now - $_30dmin,
 	   'Mcap',  $coins_now?large_num($price_now * $coins_now):'n/a'
 	  );
 
     # 3rd row: 24h spread | 30d spread | no. of Bitcoins
-    printf(" [ %7s: %6.02f [%5.01f%%] | %7s: %6.02f [%6.01f%%] | %8s: %8s ]\n",
+    printf("[ %7s: %7.02f [%6.01f%%] | %7s: %7.02f [%6.01f%%] | %8s: %8s ]\n",
 	   'spread', $_24hmax  - $_24hmin,
 	   ($_24hmax  - $_24hmin)/$price_now * 100,
 	   'spread', $_30dmax  - $_30dmin,
@@ -640,7 +640,7 @@ my @agg_line; my $agg_idx =0;
 	$pct_idx++;
     }
     # uncommented 2016-01-07 to get more space
-    for (my $i = $min_idx-2; $i<=$min_idx+2; $i++) { 	printf(" %d%%: %.02f |",	   $pct_line[$i]->{pct}-100, 	   $pct_line[$i]->{price});     }    print "\n";
+    for (my $i = $min_idx-2; $i<=$min_idx+2; $i++) { 	printf(" %+03d%%: %.02f |",	   $pct_line[$i]->{pct}-100, 	   $pct_line[$i]->{price});     }    print "\n";
 
     # $coins_now;
 
@@ -703,7 +703,7 @@ sub oneline_out {
     $line .= '% change from: ';
     my %seen = ();
     my @array = ();
-    foreach my $tag ( sort { $a cmp $b } keys %$D ) {
+    foreach my $tag ( sort by_number keys %$D ) {
 	next if ( $tag !~ m/^\d+/ );
 	my $price;
 	if ( $tag =~  'yhi$' or $tag =~ 'ath$' or $tag =~ 'zhi$' ) {
