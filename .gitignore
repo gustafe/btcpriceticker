@@ -7,6 +7,8 @@ ticker.cgi-*
 *.zip
 err*
 out*
+*.txt
+*.csv
 
 # dirs
 
