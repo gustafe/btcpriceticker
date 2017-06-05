@@ -52,7 +52,7 @@ printf("Exponential: slope: %.06f, intercept: %.06f\n",
        $e_slope, $e_intercept);
 printf("     Linear: slope: %.06f, intercept: %.06f\n",
       $l_slope, $l_intercept);
-printf("     30 day: slope: %.06f, intercept: %.06f\n",
+printf("     90 day: slope: %.06f, intercept: %.06f\n",
       $s_slope,  $s_intercept);
 #exit 0;
 my $rv = $dbh->do(qq/insert into coefficients (timestamp, intercept_exp, slope_exp, intercept_lin, slope_lin, intercept_30d, slope_30d) values (datetime('now'), ?,?,?,?,?,?)/, undef,
