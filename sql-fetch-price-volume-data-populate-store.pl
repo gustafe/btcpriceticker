@@ -28,7 +28,7 @@ my ($user, $pass) = ('','');
 
 my $dbh = DBI->connect($dsn, $user, $pass, {RaiseError=>1}) or die $DBI::errstr;
 
-my $exchangeurl = "https://api.bitcoinaverage.com/exchanges/USD";
+my $exchangeurl = "https://apiv2.bitcoinaverage.com/exchanges/USD";
 
 my $json = get( $exchangeurl );
 if ( !defined $json ) {

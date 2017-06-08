@@ -16,7 +16,7 @@ my ($user, $pass) = ('','');
 
 my $dbh = DBI->connect($dsn, $user, $pass, {RaiseError=>1}) or die $DBI::errstr;
 # https://api.bitcoinaverage.com/history/USD/per_minute_24h_sliding_window.csv
-my $data_url = 'https://api.bitcoinaverage.com/history/USD/per_minute_24h_sliding_window.csv';
+my $data_url = 'https://apiv2.bitcoinaverage.com/history/USD/per_minute_24h_sliding_window.csv';
 my $fh;
 
 my $data = get($data_url) ;

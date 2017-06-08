@@ -400,7 +400,7 @@ sub by_number { # http://perlmaven.com/sorting-mixed-strings
 ### OUTPUT FUNCTIONS ########################################
 
 my $nf = new Number::Format;
-my $api_down = 0;
+my $api_down = 1;
 my $api_down_text = "Site down for the time being.";
 sub markdown_out {
     my ($D) = @_;
@@ -1170,7 +1170,7 @@ my $now = time();
 if ( $now - $max_timestamp > 60 and !$api_down) { # fetch the price
 
     $max_timestamp = $now;
-    $price_now = get('https://api.bitcoinaverage.com/ticker/global/USD/last');
+    $price_now = get('https://apiv2.bitcoinaverage.com/ticker/global/USD/last');
     die "could not get price right now!" unless defined $price_now;
 
     $sth = $dbh->prepare("insert into prices (timestamp, average) values (datetime('now'), ?)");

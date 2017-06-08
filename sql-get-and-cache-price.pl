@@ -17,7 +17,8 @@ my ($user, $pass) = ('','');
 
 my $dbh = DBI->connect($dsn, $user, $pass, {RaiseError=>1}) or die $DBI::errstr;
 
-my $price_now = get('https://api.bitcoinaverage.com/ticker/global/USD/last');
+my $price_now = get('https://apiv2.bitcoinaverage.com/ticker/global/USD/last');
+warn "==> $price_now\n";
 if ( !defined $price_now ) {
     my $ts   = $now->strftime("%Y-%m-%dT%H:%M:%SZ");
     die "[$ts] could not get price right now!" unless defined $price_now;
