@@ -73,7 +73,7 @@ sub pause_for {
 my $force = '';
 my $help = '';
 GetOptions( 'force' => \$force, 'help' => sub { print "Usage: $0 [--force]\n"; exit 0; } );
-my $interval = 2015;
+my $interval = 1000; # around every week
 
 # Sql statements
 
@@ -99,6 +99,7 @@ my   $day_delta = $last_3->[0]->[0] - $last_3->[2]->[0];
 my $blocks_per_day = $block_delta/$day_delta;
 printf(" Avg blocks per day: %.2f (based on last 3 entries)\n", $blocks_per_day);
 
+print "Getting current block count...\n";
 my $json = web_data( 'status?q=getBlockCount', 'blockcount' );
 die "Value returned from web service is not defined!" unless defined $json;
 if ( $json >= $target or $force ) {
