@@ -6,7 +6,7 @@ use lib ("/home/gustaf/prj/BTCTicker/"); # , "/home/gustaf/perl5/lib/perl5/");
 use DBI;
 use CGI qw(:standard start_ul *table);
 use CGI::Carp qw(fatalsToBrowser);
-use LWP::Simple qw(!head);
+#use LWP::Simple qw(!head);
 use JSON;
 use Term::ANSIColor qw(:constants);
 use Scalar::Util qw(looks_like_number);
@@ -15,8 +15,9 @@ use Number::Format;
 use DateTime;
 use Time::Local;
 use Text::Wrap;
-use Time::Piece; use Time::Seconds;
-
+use Time::Piece;
+use Time::Seconds;
+use Data::Dumper;
 my $driver = 'SQLite';
 my $database = '/home/www/gerikson.com/cgi-bin/data/historical-prices.db';
 my $dsn = "DBI:$driver:dbname=$database";
@@ -26,6 +27,8 @@ my $dbh = DBI->connect($dsn, $user, $pass, {RaiseError=>1}) or die $DBI::errstr;
 
 ### keep the SQLs separate 
 my %Sql;
+
+$Sql{'latest_price'} = qq/select strftime('%s', timestamp), last, high, low, volume from ticker order by timestamp desc limit 2/;
 
 $Sql{'days_ago'} = qq/select 
 timestamp, high, low, average, volume 
@@ -96,10 +99,10 @@ $Sql{'coeffs'} = qq/select * from coefficients order by timestamp desc limit 1/;
 
 $Sql{'first_date'} = qq/select julianday(timestamp) from history order by timestamp limit 1/;
 
-$Sql{'price_volume'} = qq/select timestamp, data from pricevolumes order by timestamp desc limit 1/;
+#$Sql{'price_volume'} = qq/select timestamp, data from pricevolumes order by timestamp desc limit 1/;
 
-$Sql{'daily_min_max'} = qq/select min(p.average), max(p.average) from prices p where p.timestamp > datetime('now','-1 day') and p.average <> ''/;
-$Sql{'monthly_min_max'} = qq/select min(h.low), max(h.high) from history h where h.timestamp > datetime('now', '-30 day')/;
+#$Sql{'daily_min_max'} = qq/select min(p.average), max(p.average) from prices p where p.timestamp > datetime('now','-1 day') and p.average <> ''/;
+#$Sql{'monthly_min_max'} = qq/select min(h.low), max(h.high) from history h where h.timestamp > datetime('now', '-30 day')/;
 
 $Sql{'historical_coins'} = qq/select julianday(timestamp) as ts, block, no_of_coins as coins from blocks/;
 my $historical_coins;
@@ -218,12 +221,18 @@ sub eta_time {
     # ouput: duration in days, hours, minutes and seconds
     
     my ($ep) = @_;
-    return sprintf("%3dd %02dh %02dm %02ds", #"%02dw%02dd%02dh%02dm%02ds",
-#		   int($ep/(7*24*60*60)),
-		   int($ep/(24*60*60)),
-		   ($ep/(60*60))%24,
-		   ($ep/60)%60,
-		   $ep%60);
+    my ( $dd, $hh, $mm, $ss ) = ( int($ep/(24*60*60)),
+				  ($ep/(60*60))%24,
+				  ($ep/60)%60,
+				  $ep%60);
+    if ($dd>0) {
+	return sprintf("%3dd %02dh %02dm %02ds", $dd,$hh,$mm,$ss)
+    }elsif ($hh>0){
+	return sprintf("%02dh %02dm %02ds",$hh,$mm,$ss)
+    }else {
+	return sprintf("%02dm%02ds",$mm,$ss)
+    }
+    
 }
 
 sub hum_duration {
@@ -276,17 +285,16 @@ sub color_num {
 	$x =~ s/%$//m;
     }
     if ( $x < 0 ) {
-	
-	$x = $f->format_number($x,2,2) if $x < -1_000;
-$x = "$x%" if $is_pct;
+	$x = $f->format_number($x,2,2) ;# if $x < -1_000;
+	$x = "$x%" if $is_pct;
 	return "<span class='negative'>$x</span>";
     } else {
-
-	$x = $f->format_number($x,2,2) if $x > 1_000;
+	$x = $f->format_number($x,2,2) ; #if $x > 1_000;
 	$x = "$x%" if $is_pct;
 	return return "<span class='positive'>$x</span>";
     }
 }
+
 sub number_of_bitcoins {
     # input: julian date
     # output: number of bitcoins mined since date
@@ -318,78 +326,13 @@ sub number_of_bitcoins {
     return $x+$B;
     
 }
-sub number_of_bitcoins_old {
-       # next halving, block 420_000
-    # http://bitcoinclock.com/ has predicted date and time
-    # Checked (UTC)	Predicted (UTC)		Predicted Julian
-    # 			2016-08-02T22:32:08	2457603.44621528
-    # 2014-12-10	2016-07-31 13:34:36	2457601.065694
-    # 2015-03-25	2016-07-29 03:21:07	2457598.639664
-    # 2015-04-07 21:20 	2016-07-28 16:08:54
-    # 2015-05-28 08:38  2016-07-29 05:28:21
-       # 2016-01-20 	2016-07-17 18:23:19
-       # 2016-03-15	2016-07-13 00:25:02
-       # 2016-05-11	2016-07-10 18:03:03
-       # 2016-05-20	2016-07-10 20:57:00
-       # 2016-06-09	2016-07-10 12:04:33
-    # 2016-06-13	2016-07-10 05:52:12
-    # 2016-06-28	2016-07-09 17:59:50
-    # 2016-07-04        2016-07-09 10:47:34
-    # 2016-07-05	2016-07-09 11:47:44
-    # 2016-07-08	2016-07-09 13:03:29
-    # 2016-07-09	2016-07-09 16:46:13
+
+sub nformat {
+    my ( $in) = @_;
+    my $nf = new Number::Format;
+    return $nf->format_number($in, 2, 2);
 }
 
-
-sub calc_price_volume {
-    my ($info) = @_;
-    my $total_vol = 0; my $sub_vol =0;
-    my $priceXvol = 0; my $sub_priceXvol = 0;
-
-    my $result;
-    my $count =0; my $sub_count =0;
-
-    ### we always want localbitcoins displayed
-    my $always = 'localbitcoins';
-    if ( exists $info->{$always} ) {
-	push @$result, {exch => $always,
-			last => $info->{$always}->{rates}->{last},
-			vol => $info->{$always}->{volume_btc},
-			display_name => $info->{$always}->{display_name}};
-	$count++;
-	$priceXvol += $info->{$always}->{rates}->{last} * $info->{$always}->{volume_btc};
-	$total_vol += $info->{$always}->{volume_btc};
-
-	delete $info->{$always};
-    }
-
-    foreach my $exch ( sort {
-	$info->{$b}->{volume_btc} <=> $info->{$a}->{volume_btc} } keys %$info ) {
-	my $last = sprintf("%.02f",$info->{$exch}->{rates}->{last});
-	my $vol = sprintf("%.02f", $info->{$exch}->{volume_btc});
-	my $display_name = $info->{$exch}->{display_name};
-	$priceXvol += $last * $vol;
-	$total_vol += $vol;
-	if ( $count < 5  ) {	# fill the first 4 
-	    push @$result, { exch=>$exch, last=>$last,
-			     vol=>$vol, display_name=>$display_name };
-	    $count++;
-	} else {		# gather the rest in one bucket
-	    $sub_priceXvol += $last * $vol;
-	    $sub_vol += $vol;
-	    $sub_count++;
-	}
-    }
-    $sub_vol = $sub_vol ? $sub_vol : 0.001;
-    push @$result, {exch=>"others",
-		    last=>sprintf("%.02f",$sub_priceXvol/$sub_vol),
-		    vol=>sprintf("%.02f",$sub_vol),
-		    display_name=>"Others ($sub_count)"};
-
-    unshift @$result, {vwap => $priceXvol / $total_vol, volume=>$total_vol};
-
-    return $result;
-}
 
 sub by_number { # http://perlmaven.com/sorting-mixed-strings
     my ( $anum ) = $a =~ /(\d+)/;
@@ -399,9 +342,10 @@ sub by_number { # http://perlmaven.com/sorting-mixed-strings
 
 ### OUTPUT FUNCTIONS ########################################
 
-my $nf = new Number::Format;
+#my $nf = new Number::Format;
+
 my $api_down = 0;
-my $api_down_text = "The War on Bitcoin is over. Bitcoin won.";
+my $api_down_text = "Can't keep a good tracker down...";
 sub markdown_out {
     my ($D) = @_;
     print header('text/plain');
@@ -454,17 +398,30 @@ sub debug_out {
 #### Console ####
 
 sub console_out {
+    my ($D) = @_;
     if ($api_down) {
 	print $api_down_text, "\n";
 	return;
     }
 
 
-    my $coins_now = number_of_bitcoins(DateTime->now->jd());
-    # 3rd row: 24h spread | 30d spread | no. of Bitcoins
-    printf("%8s: %8s\n",
-	   'Bitcoins',$coins_now?large_num($coins_now):'n/a'
-	  );	   
+    my $coins_now = $D->{est_no_of_coins};
+    my $last= $D->{ticker}->{last};
+    my $data = $D->{layout};
+    my @out;
+    my $d = shift @{$data};
+    push @out, sprintf("Average VWAP: %.02f [%+8.02f] | %34s (%s)",
+		       $d->[0], $d->[1], format_utc($d->[2]), eta_time($d->[3]));
+    $d = shift @{$data};
+    push @out, sprintf("        High: %.02f (%+8.02f) | %26s 24h vol: %7s",
+		       $d->[0], $d->[1],' ' ,large_num($d->[3]));
+    $d=shift @{$data};
+    push @out, sprintf("         Low: %.02f (%+8.02f) | %26s    Mcap: %7s", 
+    		       $d->[0], $d->[1], ' ',large_num($d->[3]));
+
+    print join("\n", @out);
+    print "\n";
+
 }
 
 sub json_out {
@@ -482,10 +439,12 @@ sub json_out {
 #### HTML ####
 
 sub html_out {
+    my ($D) = @_;
     my $about_page = 'http://gerikson.com/btcticker/about.html';
+    my $last = $D->{ticker}->{last};
     print header;
     print start_html(
-		     -title=>"Current number of bitcoins",
+		     -title=>"Last: \$$last",
 		     -head =>[Link({
 				    -rel=>'stylesheet',
 				    -type=>'text/css',
@@ -493,21 +452,48 @@ sub html_out {
 				    -href=>'http://gerikson.com/stylesheets/btcticker.css'
 				   })
 			     ]);
+    my $array = $D->{layout};
+    my $diff=$array->[0]->[1];
+    my $coins_now = $D->{est_no_of_coins};
+    print h1(nformat($last));
+    print h3("Change from last update: ", color_num($diff));
 
-    my $coins_now = number_of_bitcoins(DateTime->now->jd());
-    print p($coins_now?"Est. coins: ".large_num($coins_now).' BTC':'n/a');
+    print p(sprintf("Updated on %s (%s ago).",
+		    format_utc($array->[0]->[2]),
+		    eta_time($array->[0]->[3])));
+    my @t1_rows;
+    push @t1_rows,
+      Tr((th(['24h price range', 'Diff', 'Aggregate figures'])));
+    push @t1_rows,
+      Tr(td(['Max: '.nformat($array->[1]->[0]),
+	     sprintf('%+.02f',$array->[1]->[1]),
+	     '24h volume: '.large_num($array->[1]->[3])
+	     ]));
+    push @t1_rows,
+  Tr(td(['Min: '.nformat($array->[2]->[0]),
+	 sprintf('%+.02f',$array->[2]->[1]),
+	 'Market cap: '.large_num($array->[2]->[3])
+	 ]));
+    print table( {}, @t1_rows);
 
-
-    print h2("Changelog");
-    my @changelog;
-    while (<DATA>) {
-	chomp;
-	push @changelog, $_."\n";
-    }
-    @changelog = sort {$b cmp $a} @changelog;
-    print ul (li(\@changelog));
-    print end_html();
+    ###
+    print p(a({href=>'http://gerikson.com/btcticker/about.html'}, 'About'));
 }
+
+sub oneline_out {
+    my ($D) = @_;
+    my ( $hi, $lo)= map{ $D->{ticker}->{$_}} qw/high low/;
+    print header('text/plain');
+    my $line = sprintf("Last: \$%.02f [%+.02f] ", $D->{ticker}->{last}, $D->{ticker}->{ntl_diff});
+    $line .= sprintf("(H:%.02f/L:%.02f/S:%.02f) Vol %s | ",
+		     $hi,$lo, $hi-$lo,large_num($D->{ticker}->{volume}));
+#		     map{ $D->{ticker}->{$_}} qw/high low volume/);
+    $line .= sprintf("Mcap %s | ", large_num($D->{ticker}->{last} * $D->{est_no_of_coins}));
+    $line .=  eta_time($D->{ticker}->{age})." ago";
+
+    print "$line - http://is.gd/B7NIP2\n";
+}
+
 
 #### 
 
@@ -515,18 +501,56 @@ my $query = new CGI;
 my $output = $query->param('o') || '';
 
 #### 
+my $Data = {};
+my $sth;
+my $rv;
+### current price, from DB
 
-my $Data={}; 
+$sth=$dbh->prepare($Sql{latest_price});
+$rv=$sth->execute();
+warn DBI->errstr if $rv < 0;
+my $result = $sth->fetchall_arrayref();
 
+my $latest= $result->[0];
+my $ntl = $result->[1];
+$sth->finish();
+my $now=time();
+$Data->{ticker}  = {
+		    timestamp=>$latest->[0],
+		    age=>$now-$latest->[0],
+		    last =>$latest->[1],
+		     high=>$latest->[2],
+		     low=>$latest->[3],
+		    volume=>$latest->[4],
+		    ntl_diff => $latest->[1] - $ntl->[1]
+		   };
+$Data->{debug}= {diff => $latest->[1] - $ntl->[1],		 latest=>$latest->[1],		ntl=>$ntl->[1]};
 ### historical coins
 
-my $sth = $dbh->prepare($Sql{historical_coins});
-my $rv = $sth->execute();
+$sth = $dbh->prepare($Sql{historical_coins});
+$rv = $sth->execute();
 warn DBI->errstr if $rv<0;
 $historical_coins = $sth->fetchall_hashref(1);
 $sth->finish();
+my $coins_now=number_of_bitcoins(DateTime->now->jd());
+$Data->{est_no_of_coins} =$coins_now;
 
-#$Data->{no_of_coins} = $historical_coins;
+$Data->{layout} = [
+		   [$latest->[1],
+		    $latest->[1]-$ntl->[1],
+		    $latest->[0],
+		    $now-$latest->[0]],
+		   [$latest->[2],
+		    $latest->[1]-$latest->[2],
+		    '',
+		    $latest->[4]],
+		   [$latest->[3],
+		    $latest->[1]-$latest->[3],
+		    '',
+		    $latest->[1]*$coins_now]
+		  ];
+
+
 
 ### output options
 
@@ -535,34 +559,13 @@ if ($output eq 'json'){
 
 } elsif ($output eq 'console') {
 console_out($Data);
+} elsif ($output eq 'irc' ){
+    oneline_out($Data);
 }
+
 else {
     html_out($Data);
 }
 
 $dbh->disconnect();
 
-
-__END__
-2017-06-08: Shut down of service
-2014-09-04: Initial release
-2014-09-05: Added column "Price x Volume".
-2014-09-07: added "3 days ago" row, renamed "All Time High" to "Record high".
-2014-09-08: added "Red anniversary" section.
-2014-09-12: minor date formatting changes.
-2014-09-14: added data for exponential and linear extrapolation of historic trends, "About" page.
-2014-09-16: added dates for linear trend since peak
-2014-09-21: Added "Market Cap" field
-2014-09-22: added a table showing how the volumes of different exchanges contribute to the price.
-2014-11-17: added simple conversion between USD and "bits".
-2014-11-23: rearranged info at top of page
-2014-11-30: added 365 day rolling high and low
-2014-12-10: added spread between 24h high and low
-2015-03-30: improved calculation of number of bitcoins, and thereby aggregated value for different dates
-2015-07-03: changed start date for linear extrapolation to 2015-01-14, converted display to table format
-2015-07-04: had to reformat date display for dates more than 500 years in the future
-2015-08-24: Added a section for the famous "Bitcoin pizza"
-2015-08-26: Changed recent linear trend to last 90 days
-2015-11-16: Added section on the white Mini Cooper
-2016-06-16: Historical number of coins moved to DB instead of hardcoded values in script
-2016-08-03: Added information about the Aug 2016 Bitfinex hack
