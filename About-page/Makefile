@@ -13,8 +13,10 @@ deploy: about.html
 #test-newfaq: newfaq
 #	cp $(BUILD)/newfaq.html $(WWW)/t/newfaq.html
 
-about.html: *.txt about.head about.foot
+
+about.html: *.txt about.head about.foot generate_changelog.pl
 	cat about.head > $(BUILD)/about.html
+	perl generate_changelog.pl > 11.changelog.txt
 	cat *.txt | $(MARKDOWN) >> $(BUILD)/about.html
 	cat about.foot >> $(BUILD)/about.html
 
