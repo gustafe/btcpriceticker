@@ -10,4 +10,15 @@ In the data files from Bitcoinaverage, historical days have average, high, and l
 
 
 
+## <a id="Disclaimer"></a>Disclaimer
+
+Price data accuracy and timeliness is neither implied nor guaranteed.
+
+This service uses a free, rate-limited service from [Bitcoinaverage](https://bitcoinaverage.com/). It can be interrupted or terminated at any time.
+
+The data as presented is based on my understanding of the data feed, and may not confirm with currently accepted models of BTC price data.
+
+
+
+
 
