@@ -422,6 +422,9 @@ sub json_out {
     }
 
     my ($D) = @_;
+    delete $D->{debug};
+    delete $D->{layout};
+#    delete $D->{history};
     print header('application/json');
     print to_json($D, {ascii=>1, pretty=>1});
 }
@@ -447,11 +450,35 @@ sub html_out {
     my $diff=$array->[0]->[1];
     my $coins_now = $D->{est_no_of_coins};
     print h1(nformat($last));
-    print h3("Change from last update: ", color_num($diff));
 
     print p(sprintf("Updated on %s (%s ago).",
 		    format_utc($array->[0]->[2]),
 		    eta_time($array->[0]->[3])));
+
+    print h3("Changes from last updates (UTC times)");
+
+
+    my $last_prices = $D->{"price_history_last_hours"};
+
+    my $current = shift @{$last_prices}; # get rid of current data;
+
+    my $t_latest_rows;
+    foreach my $item ( reverse @{$last_prices} ) {
+	push @{$t_latest_rows->[0]}, @{format_utc($item->[0],1)}[1];
+	push @{$t_latest_rows->[1]}, sprintf('%.02f',$item->[1]);
+	push @{$t_latest_rows->[2]}, color_num(sprintf("%.02f", $item->[2]));
+    }
+    my $latest_table;
+
+    push @{$latest_table}, th($t_latest_rows->[0]);
+    push @{$latest_table}, td($t_latest_rows->[1]);
+    push @{$latest_table}, td($t_latest_rows->[2]);
+
+    print table({}, Tr({}, $latest_table));
+
+    print p('');
+    
+
     my @t1_rows;
     my ($_24hmax, $_24hmin) = map {$array->[$_]->[0]} qw/1 2/;
     my ($_30dmax, $_30dmin) = map {$array->[$_]->[2]} qw/1 2/;
@@ -542,10 +569,11 @@ my $latest =$result->[0];
 
 my @_10min;
 for my $r (@{$result}) {
-    push @_10min, $r->[1];
+    push @_10min, [$r->[0],$r->[1],$latest->[1]-$r->[1]];
 }
-my $ntl = $_10min[1];
-#$Data->{debug} = $result;
+#my $ntl = $_10min[1]->[1];
+my $ntl_diff = $_10min[1]->[2];
+$Data->{"price_history_last_hours"} = \@_10min;
 $sth->finish();
 my $now=time();
 my $_24h_ref =
@@ -561,7 +589,7 @@ $Data->{ticker}  = {
 		    '24h_max'=>$_24h_max,
 		    '24h_min'=>$_24h_min,
 		    volume=>$latest->[4],
-		    ntl_diff => $last - $ntl
+		    ntl_diff => $ntl_diff,
 		   };
 #$Data->{debug}= {diff => $last - $ntl->[1],		 latest=>$last,		ntl=>$ntl->[1]};
 
@@ -666,7 +694,7 @@ $sth->finish();
 
 # common format for console and HTML
 $Data->{layout} = [    # last, update, date, ago
-    [ $last, $last - $ntl, $latest->[0], $now - $latest->[0] ],
+    [ $last, $ntl_diff, $latest->[0], $now - $latest->[0] ],
 
     # Max row, volume
     [  $_24h_max,         $last - $_24h_max, $_30d_max,
@@ -721,7 +749,7 @@ foreach my $tag ( sort keys %{$history} ) {
 			       $market_cap, $history->{$tag}->{short}] ;
 }
 
-$Data->{debug} = $date_list;
+#$Data->{debug} = $date_list;
 # for my $d ( sort keys %seen ) {
 #     next if scalar @{$seen{$d}} == 1;
 #     print join(' ', ($d, sort @{$seen{$d}})), "\n";
