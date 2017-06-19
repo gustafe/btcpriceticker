@@ -122,32 +122,39 @@ sub large_num { # return numbers in K, M, B based on size
 my @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 my @wdays  = qw/Sun Mon Tue Wed Thu Fri Sat/;
 
-sub format_utc { # in: epoch seconds,
-    # out: <weekday day mon year HH:MI:SS>
-    # adding a second defined arguemtn with
-    # return an arrayref with date and time
-    my ($e,$flag) = @_; 
+sub epoch_to_parts {
+    # EX format_utc 
+    # in: epoch seconds,
+    # output: hashref with named fields
+    # std: <weekday day mon year HH:MI:SS>
+    # iso: YYYY-MM-DD HH:MM:SS
+    # ymd: YYYY-MM-DD
+    # hms: HH:MM:SS
+    # jd: Julian TODO
+
+    my ($e,$flag) = @_;
+
+    my $out;
     #  0    1    2     3     4    5     6     7     8
     my($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =gmtime($e);
-    if ( $e > (1436044942 + 500 * 365 * 24 * 3600) ) {
-	return $flag ?
-	  [sprintf("In the year %d", $year+1900), 'n/a'] :
-	   sprintf("In the year %d", $year+1900);
-    }
-    # 12 Sep 2014 22:33:44
-    if ( defined $flag ) {
-	return [sprintf("%s %02d %s %04d",
-			$wdays[$wday], $mday, $months[$mon], $year+1900),
-		sprintf("%02d:%02d:%02d",
-			$hour, $min, $sec)];
-    } else { 
-	return sprintf("%s %02d %s %04d %02d:%02d:%02d",
+    if ( $e > (1436044942 + 500 * 365 * 24 * 3600) ) { # far in the future
+	$out->{out} = sprintf("In the year %d", $year+1900);
+    } else {
+	$out->{std} = sprintf("%s %02d %s %04d %02d:%02d:%02d",
 		       $wdays[$wday], $mday, $months[$mon], $year+1900,
-		       $hour, $min, $sec);
-    }
+			  $hour, $min, $sec);
+    }	
+    $out->{iso} = sprintf("%04d-%02d-%02d %02d:%02d:%02d",
+			  $year+1900, $mon+1, $mday, $hour, $min, $sec);
+    $out->{ymd} = sprintf("%04d-%02d-%02d", $year+1900, $mon+1, $mday);
+    $out->{hms}= sprintf("%02d:%02d:%02d",
+			 $hour, $min, $sec);
+    return $out;
 }
 
-sub date_parts {
+
+sub datetime_to_parts {
+    # EX date_parts
     # EX date_time
     # input: "YYYY-MM-DD HH:MI:SS" string
     # output: hashref with named fields
@@ -385,7 +392,7 @@ sub console_out {
         sprintf( "   Last: %s [%17s] | %34s (%s)",
                  BLUE . $last . RESET,
                  $diff,
-                 format_utc( $d->[2] ),
+                 epoch_to_parts( $d->[2] )->{std},
                  eta_time( $d->[3] ) );
 
     my $last_prices = $D->{"price_history_last_hours"};
@@ -483,7 +490,7 @@ sub html_out {
     print h1( nformat($last) );
 
     print p( sprintf( "Updated on %s (%s ago).",
-                      format_utc( $array->[0]->[2] ),
+                      epoch_to_parts( $array->[0]->[2] )->{std},
                       eta_time( $array->[0]->[3] ) ) );
 
     print h3("Changes from last updates (UTC times)");
@@ -494,7 +501,7 @@ sub html_out {
 
     my $t_latest_rows;
     foreach my $item ( reverse @{$last_prices} ) {
-        push @{ $t_latest_rows->[0] }, @{ format_utc( $item->[0], 1 ) }[1];
+        push @{ $t_latest_rows->[0] }, epoch_to_parts( $item->[0] )->{hms};
         push @{ $t_latest_rows->[1] }, sprintf( '%.02f', $item->[1] );
         push @{ $t_latest_rows->[2] },
             color_num( sprintf( "%.02f", $item->[2] ) );
@@ -781,9 +788,9 @@ foreach my $tag ( sort keys %{$history} ) {
     my $pct = ($last - $price)/$price*100;
     my $vol = $history->{$tag}->{volume};
     my $tot = $vol*$price;
-    my $date = date_parts($history->{$tag}->{timestamp})->{ymd};
+    my $date = datetime_to_parts($history->{$tag}->{timestamp})->{ymd};
     push @{$seen{$date}}, $tag;
-    my $no_of_coins= number_of_bitcoins(date_parts($history->{$tag}->{timestamp})->{jd});
+    my $no_of_coins= number_of_bitcoins(datetime_to_parts($history->{$tag}->{timestamp})->{jd});
     my $market_cap = $no_of_coins*$price;
     next if ( scalar @{$seen{$date}} > 1  and $tag=~/[hi|lo]$/ );
 
