@@ -12,7 +12,7 @@ out*
 
 # dirs
 
-/About-page/build
+/About-page/build/*
 /BitcoinDaysDestroyed
 /Changetip-data
 /PHPliteadmin
