@@ -122,7 +122,8 @@ sub large_num { # return numbers in K, M, B based on size
 my @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 my @wdays  = qw/Sun Mon Tue Wed Thu Fri Sat/;
 
-sub format_utc { # in: epoch seconds, out: <weekday day mon year HH:MI:SS>
+sub format_utc { # in: epoch seconds,
+    # out: <weekday day mon year HH:MI:SS>
     # adding a second defined arguemtn with
     # return an arrayref with date and time
     my ($e,$flag) = @_; 
@@ -363,57 +364,87 @@ sub debug_out {
 sub console_out {
     my ($D) = @_;
     if ($api_down) {
-	print $api_down_text, "\n";
-	return;
+        print $api_down_text, "\n";
+        return;
     }
 
-
-    my $coins_now = $D->{est_no_of_coins};
-    my $last= sprintf("%.02f",$D->{ticker}->{last});
-    my $data = $D->{layout};
+#    my $coins_now = $D->{est_no_of_coins};
+    my $last      = sprintf( "%.02f", $D->{ticker}->{last} );
     my @out;
-    my $d = shift @{$data};
-    my $diff = sprintf('%+.02f',$d->[1]);
-    if ( $diff < 0 ) { $diff=RED.$diff.RESET }
-    else { $diff=GREEN.$diff.RESET }
 
-    push @out, sprintf("   Last: %s [%17s] | %34s (%s)",
-		       BLUE.$last.RESET, $diff, format_utc($d->[2]), eta_time($d->[3]));
-    $d = shift @{$data};
-    push @out, sprintf("%8s %7.02f (%+8.02f) | %8s %7.02f (%+8.02f) | %8s %7s",
-		       '24h max', $d->[0], $d->[1],
-		       '30d max', $d->[2], $d->[3] ,
-		       '24h vol', large_num($d->[-1]));
-    $d=shift @{$data};
-    push @out, sprintf("%8s %7.02f (%+8.02f) | %8s %7.02f (%+8.02f) | %8s %7s", 		       'min', $d->[0], $d->[1],
-		       'min',$d->[2], $d->[3],
-		       'Mcap',large_num($d->[-1]));
-    $d=shift @{$data};
-    push @out, sprintf("%8s %7.02f [%7.01f%%] | %8s %7.02f [%7.01f%%] | %8s %7s",
-		       'spread', $d->[0], $d->[1],
-		       'spread', $d->[2], $d->[3],
-		       'Coins',large_num($d->[-1]));
+    my $layout      = $D->{layout};
+    
+    my $d = shift @{$layout};
+    
+    
+    my $diff = sprintf( '%+.02f', $d->[1] );
+    if   ( $diff < 0 ) { $diff = RED . $diff . RESET }
+    else               { $diff = GREEN . $diff . RESET }
 
-    print join("\n", @out);
-    print "\n";
-    foreach my $line ( @{$D->{history}} ){
-	my ($label, $date, $price, $diff, $pct, $vol, $mcap,$short) = @{$line};
-#	$price = nformat($price);
-#	$diff = nformat($diff);
-#	$pct = nformat($pct);
-	$vol = large_num($vol);
-	$mcap= large_num($mcap);
-	if ( $diff < 0 and $pct < 0 ) {
-	    $diff = RED.sprintf("%+.02f",$diff).RESET;
-	    $pct = RED.sprintf("%+.01f%%",$pct).RESET;
+    push @out,
+        sprintf( "   Last: %s [%17s] | %34s (%s)",
+                 BLUE . $last . RESET,
+                 $diff,
+                 format_utc( $d->[2] ),
+                 eta_time( $d->[3] ) );
+
+    my $last_prices = $D->{"price_history_last_hours"};
+    my $current = shift @{$last_prices};    # get rid of current data;
+    my $diffs;
+    foreach my $item ( reverse @{$last_prices} ) {
+	my $diff = sprintf('%.02f',$item->[2]);
+	if ( $diff < 0 ) {
+	    $diff = RED.$diff.RESET
 	} else {
-	    $diff = GREEN.sprintf("%+.02f",$diff).RESET;
-	    $pct = GREEN.sprintf("%+.01f%%",$pct).RESET;
+	    $diff = GREEN.$diff.RESET
 	}
-	printf("%19s %10s %8s %18s %17s %8s %8s\n",
-	       $label, '['.$date.']', $price , $diff, $pct, $vol, $mcap);
+	
+	    
+	$diffs .= sprintf("%15s ", $diff);
     }
-}
+
+#    push @out, $time_elapsed;
+    push @out, $diffs;
+
+    $d = shift @{$layout};
+    push @out,
+        sprintf( "%8s %7.02f (%+8.02f) | %8s %7.02f (%+8.02f) | %8s %7s",
+                 '24h max', $d->[0], $d->[1], '30d max', $d->[2], $d->[3],
+                 '24h vol', large_num( $d->[-1] ) );
+    $d = shift @{$layout};
+    push @out,
+        sprintf( "%8s %7.02f (%+8.02f) | %8s %7.02f (%+8.02f) | %8s %7s",
+                 'min', $d->[0], $d->[1], 'min', $d->[2], $d->[3],
+                 'Mcap', large_num( $d->[-1] ) );
+    $d = shift @{$layout};
+    push @out,
+        sprintf( "%8s %7.02f [%7.01f%%] | %8s %7.02f [%7.01f%%] | %8s %7s",
+                 'spread', $d->[0], $d->[1], 'spread', $d->[2], $d->[3],
+                 'Coins', large_num( $d->[-1] ) );
+
+    print join( "\n", @out );
+    print "\n";
+    foreach my $line ( @{ $D->{history} } ) {
+        my ( $label, $date, $price, $diff, $pct, $vol, $mcap, $short )
+            = @{$line};
+
+        #	$price = nformat($price);
+        #	$diff = nformat($diff);
+        #	$pct = nformat($pct);
+        $vol  = large_num($vol);
+        $mcap = large_num($mcap);
+        if ( $diff < 0 and $pct < 0 ) {
+            $diff = RED . sprintf( "%+.02f",   $diff ) . RESET;
+            $pct  = RED . sprintf( "%+.01f%%", $pct ) . RESET;
+        } else {
+            $diff = GREEN . sprintf( "%+.02f",   $diff ) . RESET;
+            $pct  = GREEN . sprintf( "%+.01f%%", $pct ) . RESET;
+        }
+        printf( "%19s %10s %8s %18s %17s %8s %8s\n",
+                $label, '[' . $date . ']',
+                $price, $diff, $pct, $vol, $mcap );
+    }
+} # console_out
 
 sub json_out {
     if ($api_down) {
@@ -427,129 +458,143 @@ sub json_out {
 #    delete $D->{history};
     print header('application/json');
     print to_json($D, {ascii=>1, pretty=>1});
-}
+} #json_out
 
 
-#### HTML ####
+#### HTML ######################################################
 
 sub html_out {
     my ($D) = @_;
     my $about_page = 'http://gerikson.com/btcticker/about.html';
-    my $last = sprintf("%.02f",$D->{ticker}->{last});
+    my $last = sprintf( "%.02f", $D->{ticker}->{last} );
     print header;
     print start_html(
-		     -title=>"Last: \$$last",
-		     -head =>[Link({
-				    -rel=>'stylesheet',
-				    -type=>'text/css',
-				    -media=>'all',
-				    -href=>'http://gerikson.com/stylesheets/btcticker.css'
-				   })
-			     ]);
-    my $array = $D->{layout};
-    my $diff=$array->[0]->[1];
+           -title => "Last: \$$last",
+           -head  => [
+               Link(
+                   { -rel   => 'stylesheet',
+                     -type  => 'text/css',
+                     -media => 'all',
+                     -href  => 'http://gerikson.com/stylesheets/btcticker.css'
+                   } ) ] );
+    my $array     = $D->{layout};
+    my $diff      = $array->[0]->[1];
     my $coins_now = $D->{est_no_of_coins};
-    print h1(nformat($last));
+    print h1( nformat($last) );
 
-    print p(sprintf("Updated on %s (%s ago).",
-		    format_utc($array->[0]->[2]),
-		    eta_time($array->[0]->[3])));
+    print p( sprintf( "Updated on %s (%s ago).",
+                      format_utc( $array->[0]->[2] ),
+                      eta_time( $array->[0]->[3] ) ) );
 
     print h3("Changes from last updates (UTC times)");
 
-
     my $last_prices = $D->{"price_history_last_hours"};
 
-    my $current = shift @{$last_prices}; # get rid of current data;
+    my $current = shift @{$last_prices};    # get rid of current data;
 
     my $t_latest_rows;
     foreach my $item ( reverse @{$last_prices} ) {
-	push @{$t_latest_rows->[0]}, @{format_utc($item->[0],1)}[1];
-	push @{$t_latest_rows->[1]}, sprintf('%.02f',$item->[1]);
-	push @{$t_latest_rows->[2]}, color_num(sprintf("%.02f", $item->[2]));
+        push @{ $t_latest_rows->[0] }, @{ format_utc( $item->[0], 1 ) }[1];
+        push @{ $t_latest_rows->[1] }, sprintf( '%.02f', $item->[1] );
+        push @{ $t_latest_rows->[2] },
+            color_num( sprintf( "%.02f", $item->[2] ) );
     }
     my $latest_table;
 
-    push @{$latest_table}, th($t_latest_rows->[0]);
-    push @{$latest_table}, td($t_latest_rows->[1]);
-    push @{$latest_table}, td($t_latest_rows->[2]);
+    push @{$latest_table}, th( $t_latest_rows->[0] );
+    push @{$latest_table}, td( $t_latest_rows->[1] );
+    push @{$latest_table}, td( $t_latest_rows->[2] );
 
-    print table({}, Tr({}, $latest_table));
+    print table( {}, Tr( {}, $latest_table ) );
 
     print p('');
-    
 
     my @t1_rows;
-    my ($_24hmax, $_24hmin) = map {$array->[$_]->[0]} qw/1 2/;
-    my ($_30dmax, $_30dmin) = map {$array->[$_]->[2]} qw/1 2/;
+    my ( $_24hmax, $_24hmin ) = map { $array->[$_]->[0] } qw/1 2/;
+    my ( $_30dmax, $_30dmin ) = map { $array->[$_]->[2] } qw/1 2/;
 
     push @t1_rows,
-      Tr((th(['24h price range', 'Diff','30d price range','Diff', 'Aggregate figures'])));
+        Tr( ( th( [ '24h price range',
+                    'Diff',
+                    '30d price range',
+                    'Diff',
+                    'Aggregate figures' ] ) ) );
     push @t1_rows,
-      Tr(td(['Max: '.nformat($_24hmax),
-	     sprintf('%+.02f',$array->[1]->[1]),
-	     'Max: '.nformat($_30dmax),
-	     sprintf('%+.02f', $array->[1]->[3]),
-	     '24h volume: '.large_num($array->[1]->[-1])
-	     ]));
-    push @t1_rows,
-      Tr(td(['Min: '.nformat($_24hmin),
-	 sprintf('%+.02f',$array->[2]->[1]),
-	     'Min: '.nformat($_30dmin),
-	     sprintf('%+.02f', $array->[2]->[3]),
+        Tr( td( [ 'Max: ' . nformat($_24hmax),
+                  sprintf( '%+.02f', $array->[1]->[1] ),
+                  'Max: ' . nformat($_30dmax),
+                  sprintf( '%+.02f', $array->[1]->[3] ),
+                  '24h volume: ' . large_num( $array->[1]->[-1] ) ] ) );
+    push @t1_rows, Tr(
+        td( [  'Min: ' . nformat($_24hmin),
+               sprintf( '%+.02f', $array->[2]->[1] ),
+               'Min: ' . nformat($_30dmin),
+               sprintf( '%+.02f', $array->[2]->[3] ),
 
-	     'Market cap: '.large_num($array->[2]->[-1])
-	]));
+               'Market cap: ' . large_num( $array->[2]->[-1] ) ] ) );
     push @t1_rows,
-      Tr(td(['Spread: '.nformat($array->[3]->[0]),
-	     sprintf('%.01f%%',$array->[3]->[1]),
-	     'Spread: '.nformat($array->[3]->[2]),
-	     sprintf('%.01f%%',$array->[3]->[3]),
-	     'Est. coins: '.large_num($array->[3]->[-1])
-	    ]));
-    print table( {}, @t1_rows);
+        Tr( td( [ 'Spread: ' . nformat( $array->[3]->[0] ),
+                  sprintf( '%.01f%%', $array->[3]->[1] ),
+                  'Spread: ' . nformat( $array->[3]->[2] ),
+                  sprintf( '%.01f%%', $array->[3]->[3] ),
+                  'Est. coins: ' . large_num( $array->[3]->[-1] ) ] ) );
+    print table( {}, @t1_rows );
 
     my $hist_table;
 
-    push @{$hist_table}, th(['Event', 'Date', 'Price', 'Difference',
-			     'Change in %', 'Volume (BTC)', "Price &#215; Vol",
-			     'Market cap']);
-    foreach my $line ( @{$D->{history}} ){
-	my ($label,$date, $price, $diff, $pct, $vol, $mcap,$short) = @{$line};
-	push @{$hist_table},
-	  td(["$label ($short)", $date, nformat($price), color_num($diff),
-	      color_num($pct.'%'), large_num($vol), large_num($vol*$price), large_num($mcap)]);
+    push @{$hist_table},
+        th( [ 'Event',            'Date',
+              'Price',            'Difference',
+              'Change in %',      'Volume (BTC)',
+              "Price &#215; Vol", 'Market cap' ] );
+    foreach my $line ( @{ $D->{history} } ) {
+        my ( $label, $date, $price, $diff, $pct, $vol, $mcap, $short )
+            = @{$line};
+        push @{$hist_table},
+            td( [ "$label ($short)",          $date,
+                  nformat($price),            color_num($diff),
+                  color_num( $pct . '%' ),    large_num($vol),
+                  large_num( $vol * $price ), large_num($mcap) ] );
     }
     print h2("Current price compared to historical prices");
-    print table({}, Tr({}, $hist_table));
+    print table( {}, Tr( {}, $hist_table ) );
 
     ###
-    print p(a({color=>'red',href=>'http://gerikson.com/btcticker/about.html#Disclaimer'}, 'Disclaimer'));
-    print p(a({href=>'http://gerikson.com/btcticker/about.html'}, 'About'));
-}
+    print p(
+          a( { color => 'red',
+               href  => 'http://gerikson.com/btcticker/about.html#Disclaimer'
+             },
+             'Disclaimer' ) );
+    print p(
+          a( { href => 'http://gerikson.com/btcticker/about.html' }, 'About' )
+    );
+} # html_out
 
 sub oneline_out {
     my ($D) = @_;
-    my ( $hi, $lo)= map{ $D->{ticker}->{$_}} qw/24h_max 24h_min/;
+    my ( $hi, $lo ) = map { $D->{ticker}->{$_} } qw/24h_max 24h_min/;
     print header('text/plain');
-    my $line = sprintf("Last: \$%.02f [%+.02f] ", $D->{ticker}->{last}, $D->{ticker}->{ntl_diff});
-    $line .= sprintf("(H:%.02f/L:%.02f/S:%.02f) Vol %s | ",
-		     $hi,$lo, $hi-$lo,large_num($D->{ticker}->{volume}));
+    my $line = sprintf( "Last: \$%.02f [%+.02f] ",
+                        $D->{ticker}->{last}, $D->{ticker}->{ntl_diff} );
+    $line .= sprintf( "(H:%.02f/L:%.02f/S:%.02f) Vol %s | ",
+                      $hi, $lo, $hi - $lo,
+                      large_num( $D->{ticker}->{volume} ) );
+
     #		     map{ $D->{ticker}->{$_}} qw/high low volume/);
     my $coins_now = $D->{layout}->[3]->[-1];
-    $line .= sprintf("Mcap %s | ", large_num($D->{ticker}->{last} * $coins_now));
-    $line .=  eta_time($D->{ticker}->{age})." ago | ";
+    $line .= sprintf( "Mcap %s | ",
+                      large_num( $D->{ticker}->{last} * $coins_now ) );
+    $line .= eta_time( $D->{ticker}->{age} ) . " ago | ";
     my @array;
-    foreach my $l ( @{$D->{history}} ) {
-	push @array, sprintf("%s %.01f%%;", $l->[-1], $l->[4]);
+    foreach my $l ( @{ $D->{history} } ) {
+        push @array, sprintf( "%s %.01f%%;", $l->[-1], $l->[4] );
     }
-    $line .= join(' ', @array);
+    $line .= join( ' ', @array );
 
     print "$line - http://is.gd/B7NIP2\n";
-}
+} # oneline_out
 
-
-#### 
+#### MAIN ################################################################
 
 my $query = new CGI;
 my $output = $query->param('o') || '';
@@ -576,6 +621,8 @@ my $ntl_diff = $_10min[1]->[2];
 $Data->{"price_history_last_hours"} = \@_10min;
 $sth->finish();
 my $now=time();
+
+
 my $_24h_ref =
   $dbh->selectcol_arrayref( $Sql{daily_min_max},
 			    {Columns=>[1,2]});
