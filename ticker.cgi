@@ -101,7 +101,7 @@ $Sql{'first_date'} = qq/select julianday(timestamp) from history order by timest
 
 #$Sql{'price_volume'} = qq/select timestamp, data from pricevolumes order by timestamp desc limit 1/;
 
-#$Sql{'daily_min_max'} = qq/select min(p.average), max(p.average) from prices p where p.timestamp > datetime('now','-1 day') and p.average <> ''/;
+$Sql{'daily_min_max'} = qq/select min(p.last), max(p.last) from ticker p where p.timestamp > datetime('now','-1 day')/;
 $Sql{'monthly_min_max'} = qq/select min(h.low), max(h.high) from history h where h.timestamp > datetime('now', '-30 day')/;
 
 $Sql{'historical_coins'} = qq/select julianday(timestamp) as ts, block, no_of_coins as coins from blocks/;
@@ -350,11 +350,11 @@ sub by_number { # http://perlmaven.com/sorting-mixed-strings
 my $api_down = 0;
 my $api_down_text = "Can't keep a good tracker down...";
 sub debug_out {
-    my ($D)=@_;
-    my $now = DateTime->now;
-    my $jd = $now->jd();
-    my $coins_now = number_of_bitcoins($jd);
-    print "Estimated number of bitcoins at $now is $coins_now\n";
+
+    my ($D) = @_;
+    print header('application/json');
+    print to_json($D->{debug}, {ascii=>1, pretty=>1});
+
 
 }
 
@@ -369,7 +369,7 @@ sub console_out {
 
 
     my $coins_now = $D->{est_no_of_coins};
-    my $last= $D->{ticker}->{last};
+    my $last= sprintf("%.02f",$D->{ticker}->{last});
     my $data = $D->{layout};
     my @out;
     my $d = shift @{$data};
@@ -378,7 +378,7 @@ sub console_out {
     else { $diff=GREEN.$diff.RESET }
 
     push @out, sprintf("   Last: %s [%17s] | %34s (%s)",
-		       BLUE.$d->[0].RESET, $diff, format_utc($d->[2]), eta_time($d->[3]));
+		       BLUE.$last.RESET, $diff, format_utc($d->[2]), eta_time($d->[3]));
     $d = shift @{$data};
     push @out, sprintf("%8s %7.02f (%+8.02f) | %8s %7.02f (%+8.02f) | %8s %7s",
 		       '24h max', $d->[0], $d->[1],
@@ -432,7 +432,7 @@ sub json_out {
 sub html_out {
     my ($D) = @_;
     my $about_page = 'http://gerikson.com/btcticker/about.html';
-    my $last = $D->{ticker}->{last};
+    my $last = sprintf("%.02f",$D->{ticker}->{last});
     print header;
     print start_html(
 		     -title=>"Last: \$$last",
@@ -497,6 +497,7 @@ sub html_out {
     print table({}, Tr({}, $hist_table));
 
     ###
+    print p(a({color=>'red',href=>'http://gerikson.com/btcticker/about.html#Disclaimer'}, 'Disclaimer'));
     print p(a({href=>'http://gerikson.com/btcticker/about.html'}, 'About'));
 }
 
@@ -544,17 +545,21 @@ for my $r (@{$result}) {
     push @_10min, $r->[1];
 }
 my $ntl = $_10min[1];
-$Data->{debug} = $result;
+#$Data->{debug} = $result;
 $sth->finish();
 my $now=time();
-my ( $_24h_max, $_24h_min) = ( $latest->[2],$latest->[3]);
+my $_24h_ref =
+  $dbh->selectcol_arrayref( $Sql{daily_min_max},
+			    {Columns=>[1,2]});
+my ( $_24h_min, $_24h_max ) = @{$_24h_ref};
+#my ( $_24h_max, $_24h_min) = ( $latest->[2],$latest->[3]);
 my $last = $latest->[1];
 $Data->{ticker}  = {
 		    timestamp=>$latest->[0],
 		    age=>$now-$latest->[0],
 		    last =>$last,
-		    '24h_max'=>$latest->[2],
-		    '24h_min'=>$latest->[3],
+		    '24h_max'=>$_24h_max,
+		    '24h_min'=>$_24h_min,
 		    volume=>$latest->[4],
 		    ntl_diff => $last - $ntl
 		   };
@@ -683,7 +688,10 @@ $Data->{layout} = [    # last, update, date, ago
 
 # common format for historical data
 my %seen;
-foreach my $tag ( sort by_number keys %{$history} ) {
+my $date_list;
+foreach my $tag ( sort keys %{$history} ) {
+#foreach my $tag ( sort by_number keys %{$history} ) {
+    push @{$date_list}, $tag;
     next if $tag !~ m/^\d+/;
     my $price;
     if ( $tag =~ 'yhi$' or $tag =~ 'ath$' or $tag =~ 'zhi$' ) {
@@ -712,10 +720,12 @@ foreach my $tag ( sort by_number keys %{$history} ) {
 			       $vol,
 			       $market_cap, $history->{$tag}->{short}] ;
 }
-for my $d ( sort keys %seen ) {
-    next if scalar @{$seen{$d}} == 1;
-    print join(' ', ($d, sort @{$seen{$d}})), "\n";
-}
+
+$Data->{debug} = $date_list;
+# for my $d ( sort keys %seen ) {
+#     next if scalar @{$seen{$d}} == 1;
+#     print join(' ', ($d, sort @{$seen{$d}})), "\n";
+# }
 ### output options
 
 if ($output eq 'json'){
@@ -725,8 +735,9 @@ if ($output eq 'json'){
 console_out($Data);
 } elsif ($output eq 'irc' ){
     oneline_out($Data);
+} elsif ($output eq 'debug' ) {
+    debug_out($Data);
 }
-
 else {
     html_out($Data);
 }
