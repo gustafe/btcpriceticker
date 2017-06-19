@@ -12,10 +12,10 @@ my ($user, $pass) = ('','');
 my $dbh = DBI->connect($dsn, $user, $pass, {RaiseError=>1}) or die $DBI::errstr;
 
 my @statements;
-push @statements, ['Clean incomplete daily history entries older than 1 week',
+push @statements, ['Clean incomplete daily history entries older than 1 month',
 		   qq/delete from history
 		      where volume is null
-		      and  timestamp < datetime('now', '-7 day')/];
+		      and  timestamp < datetime('now', '-31 day')/];
 push @statements, ['Clean cached ticker data older than 7 days',
 		   qq/delete from ticker
 where timestamp < datetime('now', '-7 day')/];
