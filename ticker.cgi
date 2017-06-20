@@ -433,7 +433,7 @@ sub console_out {
     print "\n";
     foreach my $line ( @{ $D->{history} } ) {
         my ( $label, $date, $price, $diff, $pct, $vol, $mcap, $short )
-            = @{$line};
+            = @{$line}[0..7];
 
         #	$price = nformat($price);
         #	$diff = nformat($diff);
@@ -514,7 +514,7 @@ sub html_out {
 
     print table( {}, Tr( {}, $latest_table ) );
 
-    print p('');
+    print h2("At a glance");
 
     my @t1_rows;
     my ( $_24hmax, $_24hmin ) = map { $array->[$_]->[0] } qw/1 2/;
@@ -548,27 +548,45 @@ sub html_out {
     print table( {}, @t1_rows );
 
     my $hist_table;
+    my $pred_table;
 
     push @{$hist_table},
         th( [ 'Event',            'Date',
               'Price',            'Difference',
               'Change in %',      'Volume (BTC)',
               "Price &#215; Vol", 'Market cap' ] );
+
+    my ( $slope_exp, $slope_lin) = map { $D->{scaffolding}->{coefficients}->[0]->{$_}} qw/slope_exp slope_lin/ ;
+    my $exp_header = sprintf("Exponential trend<br />%.02f%% / day", $slope_exp*100);
+    my $lin_header = sprintf("Linear trend<br />USD %.02f / day", $slope_lin);
+    push @{$pred_table},
+      th(['Event','Date', 'Price', $exp_header, 'Difference', $lin_header, 'Differrence']);
     foreach my $line ( @{ $D->{history} } ) {
-        my ( $label, $date, $price, $diff, $pct, $vol, $mcap, $short )
-            = @{$line};
+        my ( $label, $date, $price, $diff, $pct, $vol, $mcap, $short,
+	   $exp_pred, $exp_diff, $lin_pred, $lin_diff)
+	  = @{$line};
+	$diff = sprintf('%+.02f', $diff);
+	$pct = sprintf('%+.01f', $pct);
         push @{$hist_table},
             td( [ "$label ($short)",          $date,
                   nformat($price),            color_num($diff),
                   color_num( $pct . '%' ),    large_num($vol),
                   large_num( $vol * $price ), large_num($mcap) ] );
+	push @{$pred_table},
+	  td(["$label ($short)", $date, nformat($price),
+	      nformat($exp_pred), color_num($exp_diff),
+	      nformat($lin_pred), color_num($lin_diff)]);
     }
     print h2("Current price compared to historical prices");
     print table( {}, Tr( {}, $hist_table ) );
 
+    print "<a id='extrapolated'></a>";
+    print    h2("Historical prices compared to extrapolated trends");
+    print table( {}, Tr({}, $pred_table));
+
     ###
     print p(
-          a( { color => 'red',
+          a( { 
                href  => 'http://gerikson.com/btcticker/about.html#Disclaimer'
              },
              'Disclaimer' ) );
@@ -594,7 +612,8 @@ sub oneline_out {
     $line .= eta_time( $D->{ticker}->{age} ) . " ago | ";
     my @array;
     foreach my $l ( @{ $D->{history} } ) {
-        push @array, sprintf( "%s %.01f%%;", $l->[-1], $l->[4] );
+	my ( $pct, $short) = @{$l}[4,7];
+        push @array, sprintf( "%s %+.01f%%;", $short, $pct );
     }
     $line .= join( ' ', @array );
 
@@ -633,8 +652,9 @@ my $now=time();
 my $_24h_ref =
   $dbh->selectcol_arrayref( $Sql{daily_min_max},
 			    {Columns=>[1,2]});
+
 my ( $_24h_min, $_24h_max ) = @{$_24h_ref};
-#my ( $_24h_max, $_24h_min) = ( $latest->[2],$latest->[3]);
+
 my $last = $latest->[1];
 $Data->{ticker}  = {
 		    timestamp=>$latest->[0],
@@ -645,7 +665,6 @@ $Data->{ticker}  = {
 		    volume=>$latest->[4],
 		    ntl_diff => $ntl_diff,
 		   };
-#$Data->{debug}= {diff => $last - $ntl->[1],		 latest=>$last,		ntl=>$ntl->[1]};
 
 ### 30 day min/max
 
@@ -667,7 +686,7 @@ warn DBI->errstr if $rv<0;
 $historical_coins = $sth->fetchall_hashref(1);
 $sth->finish();
 my $coins_now=number_of_bitcoins(DateTime->now->jd());
-#$Data->{est_no_of_coins} =$coins_now;
+
 
 # historical data
 my $history;
@@ -746,6 +765,21 @@ foreach my $tag (qw(ath ytd yhi ylo zhi zlo)) {
 }
 $sth->finish();
 
+# exponential and linear trend coefficients 
+
+$sth= $dbh->prepare( $Sql{coeffs});
+$sth->execute();
+my $coefficients = $sth->fetchall_arrayref({});
+$Data->{scaffolding}->{coefficients} = $coefficients;
+$sth->finish();
+
+# get first julian day in history
+my $first_jd_ref = $dbh->selectcol_arrayref($Sql{first_date});
+my $first_jd = $first_jd_ref->[0];
+$Data->{scaffolding}->{first_jd} = $first_jd;
+
+### stuff info into some structures to pass to subs 
+
 # common format for console and HTML
 $Data->{layout} = [    # last, update, date, ago
     [ $last, $ntl_diff, $latest->[0], $now - $latest->[0] ],
@@ -769,45 +803,56 @@ $Data->{layout} = [    # last, update, date, ago
        $coins_now ], ];
 
 # common format for historical data
+
 my %seen;
 my $date_list;
+
+### linear and exponential predictions
+
+my ( $k_e, $m_e, $k_l, $m_l ) =
+  map {$coefficients->[0]->{$_}} qw/slope_exp intercept_exp slope_lin intercept_lin/;
+my $exp_price = sub { my ($d)=@_; return exp($m_e)*exp($k_e*$d); };
+my $lin_price = sub { my ($d)=@_; return $k_l*$d+$m_l; };
+
 foreach my $tag ( sort keys %{$history} ) {
-#foreach my $tag ( sort by_number keys %{$history} ) {
     push @{$date_list}, $tag;
     next if $tag !~ m/^\d+/;
     my $price;
     if ( $tag =~ 'yhi$' or $tag =~ 'ath$' or $tag =~ 'zhi$' ) {
-	$price = $history->{$tag}->{high}
-    } elsif ( $tag =~ 'ylo$' or $tag =~ 'zlo$' ){
-	$price = $history->{$tag}->{low}
+        $price = $history->{$tag}->{high};
+    } elsif ( $tag =~ 'ylo$' or $tag =~ 'zlo$' ) {
+        $price = $history->{$tag}->{low};
     } else {
-	$price = $history->{$tag}->{average}
+        $price = $history->{$tag}->{average};
     }
 
     my $diff = $last - $price;
-    my $pct = ($last - $price)/$price*100;
-    my $vol = $history->{$tag}->{volume};
-    my $tot = $vol*$price;
-    my $date = datetime_to_parts($history->{$tag}->{timestamp})->{ymd};
-    push @{$seen{$date}}, $tag;
-    my $no_of_coins= number_of_bitcoins(datetime_to_parts($history->{$tag}->{timestamp})->{jd});
-    my $market_cap = $no_of_coins*$price;
-    next if ( scalar @{$seen{$date}} > 1  and $tag=~/[hi|lo]$/ );
+    my $pct  = ( $last - $price ) / $price * 100;
+    my $vol  = $history->{$tag}->{volume};
+    my $tot  = $vol * $price;
+    my $date = datetime_to_parts( $history->{$tag}->{timestamp} )->{ymd};
+    push @{ $seen{$date} }, $tag;
+    my $jd = datetime_to_parts($history->{$tag}->{timestamp} )->{jd};
+    my $no_of_coins = number_of_bitcoins(                    $jd );
+    my $market_cap = $no_of_coins * $price;
+    next if ( scalar @{ $seen{$date} } > 1 and $tag =~ /[hi|lo]$/ );
 
-    push @{$Data->{history}}, [$history->{$tag}->{label},
-			       $date,
-			       $price,
-			       $diff,
-			       $pct,
-			       $vol,
-			       $market_cap, $history->{$tag}->{short}] ;
+    # exp and lin price diffs
+    # $first_jd
+    my $exp_pred = &$exp_price($jd-$first_jd);
+    my $lin_pred = &$lin_price($jd);
+    my $exp_diff = $price-$exp_pred;
+    my $lin_diff = $price-$lin_pred;
+
+    push @{ $Data->{history} },
+        [ $history->{$tag}->{label},
+          $date, $price, $diff, $pct, $vol,
+          $market_cap, $history->{$tag}->{short},
+	  $exp_pred, $exp_diff,
+	  $lin_pred,$lin_diff
+	];
 }
 
-#$Data->{debug} = $date_list;
-# for my $d ( sort keys %seen ) {
-#     next if scalar @{$seen{$d}} == 1;
-#     print join(' ', ($d, sort @{$seen{$d}})), "\n";
-# }
 ### output options
 
 if ($output eq 'json'){
