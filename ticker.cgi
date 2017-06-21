@@ -12,7 +12,7 @@ use Term::ANSIColor qw(:constants);
 use List::Util qw(min max first);
 use Number::Format;
 use DateTime;
-
+use Time::Local;
 use Time::Seconds;
 use Data::Dumper;
 
@@ -107,6 +107,11 @@ $Sql{'monthly_min_max'}
 
 $Sql{'historical_coins'}
     = qq/select julianday(timestamp) as ts, block, no_of_coins as coins from blocks/;
+
+$Sql{'marketcap'} = qq/select timestamp, data from coinmarketcap order by timestamp desc limit 1/;
+
+### Other vars ########################################
+
 my $historical_coins;
 
 ### HELPER FUNCTIONS ########################################
@@ -195,7 +200,7 @@ sub datetime_to_parts {
     }
 }
 
-sub jd_to_ep {
+sub julian_to_epoch {
 
     # Ex Jul2Greg
     # input: Julian date
@@ -576,7 +581,7 @@ sub html_out {
               "Price &#215; Vol", 'Market cap' ] );
 
     my ( $slope_exp, $slope_lin )
-        = map { $D->{scaffolding}->{coefficients}->[0]->{$_} }
+        = map { $D->{scaffolding}->{coefficients}->{$_} }
         qw/slope_exp slope_lin/;
     my $exp_header
         = sprintf( "Exponential trend<br />%.02f%% / day", $slope_exp * 100 );
@@ -610,7 +615,39 @@ sub html_out {
     print h2("Historical prices compared to extrapolated trends");
     print table( {}, Tr( {}, $pred_table ) );
 
-    ###
+    my $future_table;
+    my $K = $D->{future_prices}->{metadata}->{K};
+    push @{$future_table}, th(['Event', 'Price', 'ETA']);
+    foreach my $line ( @{$D->{future_prices}->{table}} ) {
+	push @{$future_table}, td($line);
+    }
+    print h3("Future prices based on linear trend from last 90 days");
+    print p(sprintf("Current slope: %.02f USD/day. Based on this line, the price will reach: ", $K));
+    if ( $K == 0 ) {
+	print p("The price will never change in the future.");
+    } else {
+	print table( {}, Tr({}, $future_table));
+    }
+
+    ### Coinmarketcap data ########################################
+
+    print h3("Current cryptocurrency marketcaps");
+    print p("Data from ",a({href=>""},"Coinmarketcap.com").'.');
+    print p("Fetched on ",$D->{marketcap}->{fetched},'UTC.');
+
+    my $marketcap_table;
+    push @{$marketcap_table}, th(['Currency', 'Marketcap USD', 'Supply', '7d change in %']);
+    for my $entry ( @{$D->{marketcap}->{list}}) {
+	my $currency = $entry->{name} . ' ('.$entry->{symbol}.')';
+	my $mcap = large_num($entry->{market_cap_usd});
+	my $coins= large_num($entry->{total_supply});
+	my $change = color_num($entry->{percent_change_7d}.'%');
+	
+	push @{$marketcap_table}, td([$currency, $mcap, $coins, $change]);
+    }
+    print table( {}, Tr({}, $marketcap_table));
+
+    ### End matter ########################################
     print p(
         a(  { href => 'http://gerikson.com/btcticker/about.html#Disclaimer' },
             'Disclaimer' ) );
@@ -618,6 +655,8 @@ sub html_out {
           a( { href => 'http://gerikson.com/btcticker/about.html' }, 'About' )
     );
 }    # html_out
+
+######################################################################
 
 sub oneline_out {
     my ($D) = @_;
@@ -701,7 +740,7 @@ $Data->{ticker}->{'30d_max'} = $_30d_max;
 $sth = $dbh->prepare( $Sql{historical_coins} );
 $rv  = $sth->execute();
 warn DBI->errstr if $rv < 0;
-$historical_coins = $sth->fetchall_hashref(1);
+$historical_coins = $sth->fetchall_hashref(1); # used in the sub
 $sth->finish();
 my $coins_now = number_of_bitcoins( DateTime->now->jd() );
 
@@ -792,7 +831,8 @@ $sth->finish();
 
 $sth = $dbh->prepare( $Sql{coeffs} );
 $sth->execute();
-my $coefficients = $sth->fetchall_arrayref( {} );
+my $coefficients_ref = $sth->fetchall_arrayref( {} );
+my $coefficients =$coefficients_ref->[0];
 $Data->{scaffolding}->{coefficients} = $coefficients;
 $sth->finish();
 
@@ -834,7 +874,7 @@ my $date_list;
 ### linear and exponential predictions
 
 my ( $k_e, $m_e, $k_l, $m_l )
-    = map { $coefficients->[0]->{$_} }
+    = map { $coefficients->{$_} }
     qw/slope_exp intercept_exp slope_lin intercept_lin/;
 my $exp_price = sub { my ($d) = @_; return exp($m_e) * exp( $k_e * $d ); };
 my $lin_price = sub { my ($d) = @_; return $k_l * $d + $m_l; };
@@ -876,7 +916,75 @@ foreach my $tag ( sort keys %{$history} ) {
           $market_cap,               $history->{$tag}->{short},
           $exp_pred,                 $exp_diff,
           $lin_pred,                 $lin_diff ];
+
+
 }
+
+### short term price predictions ########################################
+
+my ( $K, $M ) = map{  $coefficients->{$_} } qw/slope_30d intercept_30d/;
+my $date_from_price = sub { my ($p) = @_; return ( $p-$M)/$K; };
+my $price_from_date = sub { my ($d) = @_; return $K*$d + $M; };
+
+my %price_targets = (
+    apr2013hi     => { p => 213.72, label => "Apr 2013 high" },
+    prebubbleline => { p => 125,    label => "Pre-bubble price level" },
+    gox_end       => { p => 133.35, label => 'Gox last price' },
+    apr2014lo     => { p => 347.68, label => "Apr 2014 low" },
+
+    #       zero => { p => 0,      label => 'All time low' },
+    dollar_parity => { p => 1, label => 'Dollar parity' },
+
+#  current_ltc => {p=>45, label => 'Current Litecoin level (relative to peak)'},
+    blaze => { p => 420, label => "Blazin'" },
+
+    #	      mar2017hi3 => { p=>2*1286.75, label=>'Twice Mar 2017 high'},
+    #  nov2013hi2 => { p =>2*1132.26, label => "Twice Nov 2013 high"},
+    ten_k         => { p => 10_000,         label => "USD 10k" },
+    million       => { p => 1_000_000,      label => 'MOON' },
+    twice_current => { p => 2 * $last, label => "Twice current price" },
+    spartans_hodl => { p => 300,            label => "Spartans HODL!!!" },
+    sixtynine => { p => 69, label => "Sixty-Nine, \@Hubbabubba's fav" },
+
+#	      mining_limit => { p=>200, label=>"Theoretical limit of mining profitability"},
+);
+
+$Data->{future_prices}->{metadata} = {K=>$K,M=>$M};
+foreach my $tag ( sort { $price_targets{$b}->{p} <=> $price_targets{$a}->{p} } keys %price_targets ) {
+    my $p = $price_targets{$tag}->{p};
+    my $jd = &$date_from_price($p);
+    next if $jd<0 ;
+    my $epoch = julian_to_epoch($jd);
+    next if ( ($epoch - $now)<2*30*24*3600);
+    next if ( abs($last-$p)/$last < 0.1 );
+    if ( ($K >0 and $last < $p ) or ( $K < 0 and $last > $p )){
+	push @{$Data->{future_prices}->{table}},
+	  [$price_targets{$tag}->{label},
+	   nformat($p),
+	   hum_duration($epoch-$now)];
+    }
+}
+
+#### Coinmarketcap data ########################################
+
+my $marketcap_ref = $dbh->selectcol_arrayref($Sql{marketcap}, {Columns=>[1,2]});
+my $marketcap_data = decode_json( $marketcap_ref->[1] );
+my $marketcap_table;
+foreach my $entry ( @{$marketcap_data} ) {
+    push @{$marketcap_table},
+      {map{ $_=>$entry->{$_} }
+       qw/rank name symbol market_cap_usd total_supply percent_change_7d/};
+}
+$Data->{marketcap}->{fetched} = $marketcap_ref->[0];
+$Data->{marketcap}->{list} = $marketcap_table;
+
+# legacy info for external interface
+$Data->{draper} = {coins => 29656.51306529,
+		   price_at_purchase => 600,
+		   purchase_value => 600 * 29656.51306529,
+		   current_value => $last * 29656.51306529,
+		       win_loss => ($last - 600) * 29656.51306529};
+
 
 ### output options
 
