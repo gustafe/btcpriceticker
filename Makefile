@@ -11,6 +11,7 @@ test:
 	perl -Tc ticker.cgi > test 
 	perl -T ticker.cgi o=irc >> test
 	perl -T ticker.cgi o=console | perl -pe 's/\e\[?.*?[\@-~]//g' >> test
+	perl -T ticker.cgi o=mcap | perl -pe 's/\e\[?.*?[\@-~]//g' >> test
 	perl -T ticker.cgi o=html|lynx -stdin -dump >> test
 	perl -T ticker.cgi o=json > json
 
