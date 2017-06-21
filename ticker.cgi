@@ -632,7 +632,7 @@ sub html_out {
     ### Coinmarketcap data ########################################
 
     print h3("Current cryptocurrency marketcaps");
-    print p("Data from ",a({href=>""},"Coinmarketcap.com").'.');
+    print p("Data from ",a({href=>"https://coinmarketcap.com/"},"Coinmarketcap.com").'.');
     print p("Fetched on ",$D->{marketcap}->{fetched},'UTC.');
 
     my $marketcap_table;
