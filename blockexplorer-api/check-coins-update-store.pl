@@ -73,7 +73,7 @@ sub pause_for {
 my $force = '';
 my $help = '';
 GetOptions( 'force' => \$force, 'help' => sub { print "Usage: $0 [--force]\n"; exit 0; } );
-my $interval = 1000; # around every week
+my $interval = 140; # around every day
 
 # Sql statements
 
