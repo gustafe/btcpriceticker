@@ -9,14 +9,10 @@ use CGI::Carp qw(fatalsToBrowser);
 use JSON;
 use Term::ANSIColor qw(:constants);
 
-#use Scalar::Util qw(looks_like_number);
 use List::Util qw(min max first);
 use Number::Format;
 use DateTime;
 
-#use Time::Local;
-#use Text::Wrap;
-#use Time::Piece;
 use Time::Seconds;
 use Data::Dumper;
 
@@ -28,7 +24,7 @@ my ( $user, $pass ) = ( '', '' );
 my $dbh = DBI->connect( $dsn, $user, $pass, { RaiseError => 1 } )
     or die $DBI::errstr;
 
-### keep the SQLs separate
+### keep the SQLs separate ########################################
 my %Sql;
 
 $Sql{'latest_price'}
@@ -69,7 +65,6 @@ where (low is not null and low <> '')
 and timestamp>= strftime('%Y-01-01 00:00:00','now') 
 order by low asc limit 1/;
 
-# where strftime('%Y-%m-%d',timestamp) = strftime('%Y-%m-%d', 'now', ?)
 $Sql{'zhi'} = qq/select 
 cast(julianday('now') - julianday(timestamp) as int), 
 timestamp, high, low, average, volume 
@@ -104,8 +99,6 @@ $Sql{'coeffs'}
 
 $Sql{'first_date'}
     = qq/select julianday(timestamp) from history order by timestamp limit 1/;
-
-#$Sql{'price_volume'} = qq/select timestamp, data from pricevolumes order by timestamp desc limit 1/;
 
 $Sql{'daily_min_max'}
     = qq/select min(p.last), max(p.last) from ticker p where p.timestamp > datetime('now','-1 day')/;
@@ -272,6 +265,8 @@ sub eta_time {
 }
 
 sub hum_duration {
+    # in: seconds
+    # out: nicely formatted string years, months, days
     my ($s) = @_;
     my %pieces = ( year => 0, month => 0, day => 0 );
     my $v = Time::Seconds->new($s);
@@ -387,8 +382,6 @@ sub by_number {    # http://perlmaven.com/sorting-mixed-strings
 
 ### OUTPUT FUNCTIONS ########################################
 
-#my $nf = new Number::Format;
-
 my $api_down      = 0;
 my $api_down_text = "Can't keep a good tracker down...";
 
@@ -409,7 +402,6 @@ sub console_out {
         return;
     }
 
-    #    my $coins_now = $D->{est_no_of_coins};
     my $last = sprintf( "%.02f", $D->{ticker}->{last} );
     my @out;
 
@@ -442,7 +434,6 @@ sub console_out {
         $diffs .= sprintf( "%15s ", $diff );
     }
 
-    #    push @out, $time_elapsed;
     push @out, $diffs;
 
     $d = shift @{$layout};
@@ -467,9 +458,6 @@ sub console_out {
         my ( $label, $date, $price, $diff, $pct, $vol, $mcap, $short )
             = @{$line}[ 0 .. 7 ];
 
-        #	$price = nformat($price);
-        #	$diff = nformat($diff);
-        #	$pct = nformat($pct);
         $vol  = large_num($vol);
         $mcap = large_num($mcap);
         if ( $diff < 0 and $pct < 0 ) {
@@ -495,7 +483,6 @@ sub json_out {
     delete $D->{debug};
     delete $D->{layout};
 
-    #    delete $D->{history};
     print header('application/json');
     print to_json( $D, { ascii => 1, pretty => 1 } );
 }    #json_out
@@ -642,7 +629,6 @@ sub oneline_out {
                       $hi, $lo, $hi - $lo,
                       large_num( $D->{ticker}->{volume} ) );
 
-    #		     map{ $D->{ticker}->{$_}} qw/high low volume/);
     my $coins_now = $D->{layout}->[3]->[-1];
     $line .= sprintf( "Mcap %s | ",
                       large_num( $D->{ticker}->{last} * $coins_now ) );
@@ -680,7 +666,6 @@ for my $r ( @{$result} ) {
     push @_10min, [ $r->[0], $r->[1], $latest->[1] - $r->[1] ];
 }
 
-#my $ntl = $_10min[1]->[1];
 my $ntl_diff = $_10min[1]->[2];
 $Data->{"price_history_last_hours"} = \@_10min;
 $sth->finish();
@@ -720,7 +705,7 @@ $historical_coins = $sth->fetchall_hashref(1);
 $sth->finish();
 my $coins_now = number_of_bitcoins( DateTime->now->jd() );
 
-# historical data
+### historical data ########################################
 my $history;
 my %fixed;
 $fixed{180} = { label => '6 months ago', short => '6mo' };
@@ -742,9 +727,6 @@ foreach my $day ( sort { $a <=> $b } keys %fixed ) {
     if ( $day == 1 ) {    # special case
         my $yesterday = time - 24 * 3600;
         $sth = $dbh->prepare( $Sql{'24h'} );
-
-        #	warn "==> ". $Sql{'24h'}."\n";
-        #	warn "==> ". $yesterday ."\n";
 
         $rv = $sth->execute( $yesterday - 5 * 60, $yesterday + 5 * 60 );
         warn DBI->errstr if $rv < 0;
@@ -821,7 +803,8 @@ $Data->{scaffolding}->{first_jd} = $first_jd;
 
 ### stuff info into some structures to pass to subs
 
-# common format for console and HTML
+# common format for console and HTML - overview
+
 $Data->{layout} = [    # last, update, date, ago
     [ $last, $ntl_diff, $latest->[0], $now - $latest->[0] ],
 
