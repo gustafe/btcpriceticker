@@ -511,18 +511,11 @@ sub html_out {
     my $array     = $D->{layout};
     my $diff      = $array->[0]->[1];
     my $coins_now = $D->{est_no_of_coins};
-    print h1( nformat($last) );
-
-    print p( sprintf( "Updated on %s (%s ago).",
-                      epoch_to_parts( $array->[0]->[2] )->{std},
-                      eta_time( $array->[0]->[3] ) ) );
-
-    print h3("Changes from last updates (UTC times)");
+    
+    ### Build structures ########################################
 
     my $last_prices = $D->{"price_history_last_hours"};
-
     my $current = shift @{$last_prices};    # get rid of current data;
-
     my $t_latest_rows;
     foreach my $item ( reverse @{$last_prices} ) {
         push @{ $t_latest_rows->[0] }, epoch_to_parts( $item->[0] )->{hms};
@@ -536,10 +529,7 @@ sub html_out {
     push @{$latest_table}, td( $t_latest_rows->[1] );
     push @{$latest_table}, td( $t_latest_rows->[2] );
 
-    print table( {}, Tr( {}, $latest_table ) );
-
-    print h2("At a glance");
-
+    ### ==================================================
     my @t1_rows;
     my ( $_24hmax, $_24hmin ) = map { $array->[$_]->[0] } qw/1 2/;
     my ( $_30dmax, $_30dmin ) = map { $array->[$_]->[2] } qw/1 2/;
@@ -569,8 +559,7 @@ sub html_out {
                   'Spread: ' . nformat( $array->[3]->[2] ),
                   sprintf( '%.01f%%', $array->[3]->[3] ),
                   'Est. coins: ' . large_num( $array->[3]->[-1] ) ] ) );
-    print table( {}, @t1_rows );
-
+    ### ==================================================
     my $hist_table;
     my $pred_table;
 
@@ -608,32 +597,8 @@ sub html_out {
                   color_num($exp_diff), nformat($lin_pred),
                   color_num($lin_diff) ] );
     }
-    print h2("Current price compared to historical prices");
-    print table( {}, Tr( {}, $hist_table ) );
 
-    print "<a id='extrapolated'></a>";
-    print h2("Historical prices compared to extrapolated trends");
-    print table( {}, Tr( {}, $pred_table ) );
-
-    my $future_table;
-    my $K = $D->{future_prices}->{metadata}->{K};
-    push @{$future_table}, th(['Event', 'Price', 'ETA']);
-    foreach my $line ( @{$D->{future_prices}->{table}} ) {
-	push @{$future_table}, td($line);
-    }
-    print h3("Future prices based on linear trend from last 90 days");
-    print p(sprintf("Current slope: %.02f USD/day. Based on this line, the price will reach: ", $K));
-    if ( $K == 0 ) {
-	print p("The price will never change in the future.");
-    } else {
-	print table( {}, Tr({}, $future_table));
-    }
-
-    ### Coinmarketcap data ########################################
-
-    print h3("Current cryptocurrency marketcaps");
-    print p("Data from ",a({href=>"https://coinmarketcap.com/"},"Coinmarketcap.com").'.');
-    print p("Fetched on ",$D->{marketcap}->{fetched},'UTC.');
+    ### ==================================================
 
     my $marketcap_table;
     push @{$marketcap_table}, th(['Currency', 'Marketcap USD', 'Supply', '7d change in %']);
@@ -645,7 +610,49 @@ sub html_out {
 	
 	push @{$marketcap_table}, td([$currency, $mcap, $coins, $change]);
     }
+    ### ==================================================
+    my $future_table;
+    my $K = $D->{future_prices}->{metadata}->{K};
+    push @{$future_table}, th(['Event', 'Price', 'ETA']);
+    foreach my $line ( @{$D->{future_prices}->{table}} ) {
+	push @{$future_table}, td($line);
+    }
+
+    ### Output ########################################
+    print h1( nformat($last) );
+
+    print p( sprintf( "Updated on %s (%s ago).",
+                      epoch_to_parts( $array->[0]->[2] )->{std},
+                      eta_time( $array->[0]->[3] ) ) );
+
+    print h3("Changes from last updates (UTC times)");
+
+    print table( {}, Tr( {}, $latest_table ) );
+
+    print h2("At a glance");
+
+    print table( {}, @t1_rows );
+
+    print h2("Current price compared to historical prices");
+    print table( {}, Tr( {}, $hist_table ) );
+
+    print h2("Current cryptocurrency marketcaps");
+    print p("Data from ",a({href=>"https://coinmarketcap.com/"},"Coinmarketcap.com").'.');
+    print p("Fetched on ",$D->{marketcap}->{fetched},'UTC.');
+
     print table( {}, Tr({}, $marketcap_table));
+
+    print "<a id='extrapolated'></a>";
+    print h2("Historical prices compared to extrapolated trends");
+    print table( {}, Tr( {}, $pred_table ) );
+
+    print h2("Future prices based on linear trend from last 90 days");
+    print p(sprintf("Current slope: %.02f USD/day. Based on this line, the price will reach: ", $K));
+    if ( $K == 0 ) {
+	print p("The price will never change in the future.");
+    } else {
+	print table( {}, Tr({}, $future_table));
+    }
 
     ### End matter ########################################
     print p(
