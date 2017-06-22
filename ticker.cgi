@@ -719,14 +719,18 @@ sub mcap_out {
     my $fetched = $D->{marketcap}->{fetched};
     my $list    = $D->{marketcap}->{list};
     print BLUE;
-    printf( "%2s %18s %8s %8s %7s %7s %7s %7s",
-            '#', 'Coin', 'Mcap', 'Total', 'Avail%', '1h', '24h', '7d' );
+    printf( "%2s %18s %8s %7s %8s %7s %7s %7s %7s",
+            '#', 'Coin', 'Mcap', 'Frac','Total', 'Avail%', '1h', '24h', '7d' );
     print RESET. "\n";
     foreach my $el ( @{$list} ) {
         my ( $rank, $name ) = map { $el->{$_} } qw/rank name/;
         my ( $mcap, $total )
             = map { large_num( $el->{$_} ) } qw/market_cap_usd total_supply/;
         my $avail_pct = $el->{available_supply} / $el->{total_supply} * 100;
+	$avail_pct= $avail_pct == 100 ?
+	  sprintf('%02d', $avail_pct) :
+	  sprintf('%.01f', $avail_pct);
+	my $frac_of_top = $el->{market_cap_usd}/$list->[0]->{market_cap_usd}*100;
         my @changes   = map {
             $el->{$_} < 0
                 ? RED . sprintf( '%.01f%%', $el->{$_} ) . RESET
@@ -734,8 +738,8 @@ sub mcap_out {
                 . sprintf( '%.01f%%', $el->{$_} )
                 . RESET
         } qw/percent_change_1h percent_change_24h percent_change_7d/;
-        printf( "%2d %18s %8s %8s %6.01f%% %16s %16s %16s\n",
-                $rank, $name, $mcap, $total, $avail_pct, @changes );
+        printf( "%2d %18s %8s %6.01f%% %8s %6s%%  %16s %16s %16s\n",
+                $rank, $name, $mcap, $frac_of_top, $total, $avail_pct, @changes );
     }
     print "  Fetched: $fetched\n";
 }
@@ -1040,9 +1044,9 @@ $Data->{marketcap}->{list}    = $marketcap_table;
 # legacy info for external interface
 $Data->{draper} = { coins             => 29656.51306529,
                     price_at_purchase => 600,
-                    purchase_value    => large_num( 600 * 29656.51306529 ),
-                    current_value     => large_num( $last * 29656.51306529 ),
-                    win_loss => large_num( ( $last - 600 ) * 29656.51306529 )
+                    purchase_value    => 600 * 29656.51306529 ,
+                    current_value     =>  $last * 29656.51306529 ,
+                    win_loss =>  ( $last - 600 ) * 29656.51306529 
 };
 
 $dbh->disconnect();
