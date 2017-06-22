@@ -1,24 +1,28 @@
 # About my little Bitcoin price tracker
 
-This web script reads current and historical prices from [Bitcoinaverage](https://bitcoinaverage.com/markets#USD) and presents the prices from some selected points in time.
+This web script reads current and historical prices from
+[Bitcoinaverage](https://bitcoinaverage.com/en/bitcoin-price/btc-to-usd)
+and presents the prices from some selected points in time.
 
-There's a "semi-logarithmic" timescale of 3 day, 1 week, 1 month (30 days), 6 months, and 1 year. In addition, price from 1 Jan of the current year, this year's high, and this year's low are included. 
+There's a "semi-logarithmic" timescale of 3 days, 1 week, 1 month (30 days), 6 months, and 1 year. In addition, price from 1 Jan of the current year, this year's high, and this year's low are included. 
 
-I've also included the current (Sep 2014) record high price from Nov 2013.
+I've also included the current record high price (commonly referred to
+as "All time high").
 
-In the data files from Bitcoinaverage, historical days have average, high, and low volume-weighted prices. The prices in the tables are average for each day, except of the highs and lows mentioned above.
-
-
+In the data files from Bitcoinaverage, historical days have average,
+high, and low volume-weighted prices. The prices in the tables are
+average for each day, except of the highs and lows mentioned above.
 
 ## <a id="Disclaimer"></a>Disclaimer
 
 Price data accuracy and timeliness is neither implied nor guaranteed.
 
-This service uses a free, rate-limited service from [Bitcoinaverage](https://bitcoinaverage.com/). It can be interrupted or terminated at any time.
+This service uses a free, rate-limited service from
+[Bitcoinaverage](https://bitcoinaverage.com/). It can be interrupted
+or terminated at any time.
 
-The data as presented is based on my understanding of the data feed, and may not confirm with currently accepted models of BTC price data.
-
-
+The data as presented is based on my understanding of the data feed,
+and may not confirm with currently accepted models of BTC price data.
 
 
 

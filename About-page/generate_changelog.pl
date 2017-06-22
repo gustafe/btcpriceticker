@@ -37,3 +37,4 @@ __DATA__
 2015-11-16: Added section on the white Mini Cooper
 2016-06-16: Historical number of coins moved to DB instead of hardcoded values in script
 2016-08-03: Added information about the Aug 2016 Bitfinex hack
+2017-06-22: Official relaunch using new API and some new features, such as coin market cap data.
