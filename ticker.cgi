@@ -114,7 +114,7 @@ $Sql{'marketcap'}
 ### Other vars ########################################
 
 my $historical_coins;
-
+my $config = { show_cap_html => 0 };
 ### HELPER FUNCTIONS ########################################
 
 sub large_num {    # return numbers in K, M, B based on size
@@ -602,7 +602,9 @@ sub html_out {
 
     ### ==================================================
 
-    my $marketcap_table;
+   my $marketcap_table;
+    if ( $config->{show_cap_html} ){
+ 
     push @{$marketcap_table},
         th( [ 'Currency',
               'Marketcap USD',
@@ -625,7 +627,7 @@ sub html_out {
 
         push @{$marketcap_table},
             td( [ $currency, $mcap, $total, $pct_avail, @changes ] );
-    }
+    }}
 
     ### ==================================================
     my $future_table;
@@ -642,17 +644,19 @@ sub html_out {
                       epoch_to_parts( $array->[0]->[2] )->{std},
                       eta_time( $array->[0]->[3] ) ) );
 
-    print h3("Changes from last updates (UTC times)");
-
-    print table( {}, Tr( {}, $latest_table ) );
-
     print h2("At a glance");
 
     print table( {}, @t1_rows );
 
+
+    print h3("Changes from last updates (UTC times)");
+
+    print table( {}, Tr( {}, $latest_table ) );
+
+
     print h2("Current price compared to historical prices");
     print table( {}, Tr( {}, $hist_table ) );
-
+if ( $config->{show_cap_html} ){
     print h2("Current cryptocurrency marketcaps");
     print p( "Data from ",
              a( { href => "https://coinmarketcap.com/" },
@@ -661,7 +665,7 @@ sub html_out {
     print p( "Fetched on ", $D->{marketcap}->{fetched}, 'UTC.' );
 
     print table( {}, Tr( {}, $marketcap_table ) );
-
+}
     print "<a id='extrapolated'></a>";
     print h2("Historical prices compared to extrapolated trends");
     print table( {}, Tr( {}, $pred_table ) );
@@ -725,7 +729,8 @@ sub mcap_out {
     foreach my $el ( @{$list} ) {
         my ( $rank, $name ) = map { $el->{$_} } qw/rank name/;
         my ( $mcap, $total )
-            = map { large_num( $el->{$_} ) } qw/market_cap_usd total_supply/;
+	  = map { large_num( $el->{$_} ) } qw/market_cap_usd total_supply/;
+
         my $avail_pct = $el->{available_supply} / $el->{total_supply} * 100;
 	$avail_pct= $avail_pct == 100 ?
 	  sprintf('%02d', $avail_pct) :
