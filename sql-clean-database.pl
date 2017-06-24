@@ -16,9 +16,9 @@ push @statements, ['Clean incomplete daily history entries older than 1 month',
 		   qq/delete from history
 		      where volume is null
 		      and  timestamp < datetime('now', '-31 day')/];
-push @statements, ['Clean cached ticker data older than 7 days',
+push @statements, ['Clean cached ticker data older than 1 month',
 		   qq/delete from ticker
-where timestamp < datetime('now', '-7 day')/];
+where timestamp < datetime('now', '-31 day')/];
 
 push @statements, ['Clean daily price/volume data older than 7 days',
 		   qq/delete from pricevolumes
