@@ -114,7 +114,7 @@ $Sql{'marketcap'}
 ### Other vars ########################################
 
 my $historical_coins;
-my $config = { show_cap_html => 0 };
+my $config = { show_cap_html => 1 };
 ### HELPER FUNCTIONS ########################################
 
 sub large_num {    # return numbers in K, M, B based on size
@@ -602,32 +602,52 @@ sub html_out {
 
     ### ==================================================
 
-   my $marketcap_table;
-    if ( $config->{show_cap_html} ){
- 
-    push @{$marketcap_table},
-        th( [ 'Currency',
-              'Marketcap USD',
-              'Total supply',
-              'Available supply in %',
-              '1h change',
-              '24h change',
-              '7d change' ] );
-    for my $entry ( @{ $D->{marketcap}->{list} } ) {
-        my $currency  = $entry->{name} . ' (' . $entry->{symbol} . ')';
-        my $mcap      = large_num( $entry->{market_cap_usd} );
-        my $total     = large_num( $entry->{total_supply} );
-        my $pct_avail = sprintf( '%.01f%%',
-                                       $entry->{available_supply}
-                                     / $entry->{total_supply}
-                                     * 100 );
-        my @changes
-            = map { color_num( $entry->{ 'percent_change_' . $_ } . '%' ) }
-            qw/1h 24h 7d/;
+    my $marketcap_table;
+    if ( $config->{show_cap_html} ) {
 
+        #	my $metadata = pop @{$D->{marketcap}->{list}};
         push @{$marketcap_table},
-            td( [ $currency, $mcap, $total, $pct_avail, @changes ] );
-    }}
+            th( [ 'Currency',
+                  'Marketcap USD',
+                  'Dominance',
+                  'Total supply',
+                  'Available supply in %',
+                  '1h change',
+                  '24h change',
+                  '7d change' ] );
+        for my $entry ( @{ $D->{marketcap}->{list} } ) {
+            my $currency;
+            if ( $entry->{symbol} eq 'others' ) {
+                $currency
+                    = $entry->{name} . ' ('
+                    . $D->{marketcap}->{total_other_coins}
+                    . ' coins)<sup>**</sup>';
+            } elsif ( $entry->{symbol} eq 'BTC' ) {
+		$currency = $entry->{name} . ' (' . $entry->{symbol} . ')<sup>*</sup>';
+	    }
+	    else {
+                $currency = $entry->{name} . ' (' . $entry->{symbol} . ')';
+            }
+            my $mcap      = large_num( $entry->{market_cap_usd} );
+            my $dominance = sprintf( '%.01f%%',
+                                           $entry->{market_cap_usd}
+                                         / $D->{marketcap}->{total_mcap}
+                                         * 100 );
+            my $total     = large_num( $entry->{total_supply} );
+            my $pct_avail = sprintf( '%.01f%%',
+                                           $entry->{available_supply}
+                                         / $entry->{total_supply}
+                                         * 100 );
+            my @changes
+                = map { color_num( $entry->{ 'percent_change_' . $_ } . '%' ) }
+                qw/1h 24h 7d/;
+
+            push @{$marketcap_table},
+                td(
+                 [ $currency, $mcap, $dominance, $total, $pct_avail, @changes
+                 ] );
+        }
+    }
 
     ### ==================================================
     my $future_table;
@@ -648,24 +668,35 @@ sub html_out {
 
     print table( {}, @t1_rows );
 
-
     print h3("Changes from last updates (UTC times)");
 
     print table( {}, Tr( {}, $latest_table ) );
 
-
     print h2("Current price compared to historical prices");
     print table( {}, Tr( {}, $hist_table ) );
-if ( $config->{show_cap_html} ){
-    print h2("Current cryptocurrency marketcaps");
-    print p( "Data from ",
-             a( { href => "https://coinmarketcap.com/" },
-                 "Coinmarketcap.com" )
-                 . '.' );
-    print p( "Fetched on ", $D->{marketcap}->{fetched}, 'UTC.' );
+    if ( $config->{show_cap_html} ) {
+        print h2("Current cryptocurrency marketcaps");
+        print p( "Data from ",
+                 a( { href => "https://coinmarketcap.com/" },
+                     "Coinmarketcap.com" )
+                     . '.' );
+        print p( "Fetched on ", $D->{marketcap}->{fetched}, 'UTC.' );
 
-    print table( {}, Tr( {}, $marketcap_table ) );
-}
+        print table( {}, Tr( {}, $marketcap_table ) );
+	print p(
+		"<sup>*</sup> For Bitcoin, values for number of coins
+		and marketcap may differ from other values on this
+		page due to different methodology and update
+		times. See ",
+		a({href=>'http://gerikson.com/btcticker/about.html#marketcap'},
+		'this section'), "for more information."
+	       );
+        print p(
+		"<sup>**</sup> Values for total supply, supply
+		percentage, and change percentages are volume-weighted
+		averages (USD marketcap used as weight)."
+	       );
+    }
     print "<a id='extrapolated'></a>";
     print h2("Historical prices compared to extrapolated trends");
     print table( {}, Tr( {}, $pred_table ) );
@@ -719,32 +750,36 @@ sub oneline_out {
 ### ==================================================
 
 sub mcap_out {
-    my ($D)     = @_;
-    my $fetched = $D->{marketcap}->{fetched};
-    my $list    = $D->{marketcap}->{list};
+    my ($D)        = @_;
+    my $fetched    = $D->{marketcap}->{fetched};
+    my $total_mcap = $D->{marketcap}->{total_mcap};
+    my $list       = $D->{marketcap}->{list};
     print BLUE;
-    printf( "%2s %18s %8s %7s %8s %7s %7s %7s %7s",
-            '#', 'Coin', 'Mcap', 'Frac','Total', 'Avail%', '1h', '24h', '7d' );
+    printf( "%3s %16s %7s %7s %8s %7s %8s %7s %7s",
+            '#',      'Coin', 'Mcap', 'Domi', 'Total',
+            'Avail%', '1h',   '24h',  '7d' );
     print RESET. "\n";
     foreach my $el ( @{$list} ) {
         my ( $rank, $name ) = map { $el->{$_} } qw/rank name/;
         my ( $mcap, $total )
-	  = map { large_num( $el->{$_} ) } qw/market_cap_usd total_supply/;
+            = map { large_num( $el->{$_} ) } qw/market_cap_usd total_supply/;
 
         my $avail_pct = $el->{available_supply} / $el->{total_supply} * 100;
-	$avail_pct= $avail_pct == 100 ?
-	  sprintf('%02d', $avail_pct) :
-	  sprintf('%.01f', $avail_pct);
-	my $frac_of_top = $el->{market_cap_usd}/$list->[0]->{market_cap_usd}*100;
-        my @changes   = map {
+        $avail_pct
+            = $avail_pct == 100
+            ? sprintf( '%02d',  $avail_pct )
+            : sprintf( '%.01f', $avail_pct );
+        my $frac_of_top = $el->{market_cap_usd} / $total_mcap * 100;
+        my @changes     = map {
             $el->{$_} < 0
                 ? RED . sprintf( '%.01f%%', $el->{$_} ) . RESET
                 : GREEN
                 . sprintf( '%.01f%%', $el->{$_} )
                 . RESET
         } qw/percent_change_1h percent_change_24h percent_change_7d/;
-        printf( "%2d %18s %8s %6.01f%% %8s %6s%%  %16s %16s %16s\n",
-                $rank, $name, $mcap, $frac_of_top, $total, $avail_pct, @changes );
+        printf( "%3d %16s %7s %6.01f%% %8s %6s%%  %16s %16s %16s\n",
+                $rank, $name, $mcap, $frac_of_top, $total, $avail_pct,
+                @changes );
     }
     print "  Fetched: $fetched\n";
 }
@@ -1037,6 +1072,7 @@ my $marketcap_ref
     = $dbh->selectcol_arrayref( $Sql{marketcap}, { Columns => [ 1, 2 ] } );
 my $marketcap_data = decode_json( $marketcap_ref->[1] );
 my $marketcap_table;
+my $metadata = pop @{$marketcap_data};
 foreach my $entry ( @{$marketcap_data} ) {
     push @{$marketcap_table},
         { map { $_ => $entry->{$_} }
@@ -1044,15 +1080,18 @@ foreach my $entry ( @{$marketcap_data} ) {
         };
 }
 $Data->{marketcap}->{fetched} = $marketcap_ref->[0];
-$Data->{marketcap}->{list}    = $marketcap_table;
+foreach my $tag ( "active_other_coins", "total_other_coins", "total_mcap" ) {
+    $Data->{marketcap}->{$tag} = $metadata->{$tag};
+}
+
+$Data->{marketcap}->{list} = $marketcap_table;
 
 # legacy info for external interface
 $Data->{draper} = { coins             => 29656.51306529,
                     price_at_purchase => 600,
-                    purchase_value    => 600 * 29656.51306529 ,
-                    current_value     =>  $last * 29656.51306529 ,
-                    win_loss =>  ( $last - 600 ) * 29656.51306529 
-};
+                    purchase_value    => 600 * 29656.51306529,
+                    current_value     => $last * 29656.51306529,
+                    win_loss          => ( $last - 600 ) * 29656.51306529 };
 
 $dbh->disconnect();
 

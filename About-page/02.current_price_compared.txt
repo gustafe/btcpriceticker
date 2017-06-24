@@ -10,7 +10,7 @@ This means that the current price is calculated using the formula
 
     current_price = historical_price * (1 + percentage/100)
 
-### Market cap
+### <a id="marketcap"></a>Market cap
 
 The number of coins at a certain date is calculated using extrapolated values from a sampling of blocks at a certain timestamp. This is pulled from the [Blockexplorer.com](http://blockexplorer.com) API once a day. 
 
