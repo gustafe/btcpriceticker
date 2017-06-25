@@ -33,7 +33,9 @@ if ( !$response->is_success ) {
                      total_supply       => 0,
                      percent_change_1h  => 0,
                      percent_change_24h => 0,
-                     percent_change_7d  => 0 );
+                     percent_change_7d  => 0,
+		     price_usd=>0
+		   );
     my $others_ref = { name => 'Others', symbol => 'others', id => 'others' };
 
     for my $el ( @{$info} ) {

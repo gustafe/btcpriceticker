@@ -396,7 +396,8 @@ sub debug_out {
 
     my ($D) = @_;
     print header('application/json');
-    print to_json( $D->{debug}, { ascii => 1, pretty => 1 } );
+
+    #    print to_json( $D->{debug}, { ascii => 1, pretty => 1 } );
 
 }
 
@@ -623,9 +624,11 @@ sub html_out {
                     . $D->{marketcap}->{total_other_coins}
                     . ' coins)<sup>**</sup>';
             } elsif ( $entry->{symbol} eq 'BTC' ) {
-		$currency = $entry->{name} . ' (' . $entry->{symbol} . ')<sup>*</sup>';
-	    }
-	    else {
+                $currency
+                    = $entry->{name} . ' ('
+                    . $entry->{symbol}
+                    . ')<sup>*</sup>';
+            } else {
                 $currency = $entry->{name} . ' (' . $entry->{symbol} . ')';
             }
             my $mcap      = large_num( $entry->{market_cap_usd} );
@@ -683,19 +686,20 @@ sub html_out {
         print p( "Fetched on ", $D->{marketcap}->{fetched}, 'UTC.' );
 
         print table( {}, Tr( {}, $marketcap_table ) );
-	print p(
-		"<sup>*</sup> For Bitcoin, values for number of coins
+        print p(
+            "<sup>*</sup> For Bitcoin, values for number of coins
 		and marketcap may differ from other values on this
 		page due to different methodology and update
 		times. See ",
-		a({href=>'http://gerikson.com/btcticker/about.html#marketcap'},
-		'this section'), "for more information."
-	       );
+            a(  {  href =>
+                       'http://gerikson.com/btcticker/about.html#marketcap' },
+                'this section' ),
+            "for more information." );
         print p(
-		"<sup>**</sup> Values for total supply, supply
+            "<sup>**</sup> Values for total supply, supply
 		percentage, and change percentages are volume-weighted
 		averages (USD marketcap used as weight)."
-	       );
+        );
     }
     print "<a id='extrapolated'></a>";
     print h2("Historical prices compared to extrapolated trends");
@@ -755,12 +759,13 @@ sub mcap_out {
     my $total_mcap = $D->{marketcap}->{total_mcap};
     my $list       = $D->{marketcap}->{list};
     print BLUE;
-    printf( "%3s %16s %7s %7s %8s %7s %8s %7s %7s",
-            '#',      'Coin', 'Mcap', 'Domi', 'Total',
-            'Avail%', '1h',   '24h',  '7d' );
+    printf( "%3s %7s %7s %7s %7s %8s %7s %8s %7s %7s",
+            '#',     'Coin',   'Mcap', 'Price', 'Domi',
+            'Total', 'Avail%', '1h',   '24h',   '7d' );
     print RESET. "\n";
     foreach my $el ( @{$list} ) {
-        my ( $rank, $name ) = map { $el->{$_} } qw/rank name/;
+        my ( $rank, $name ) = map { $el->{$_} } qw/rank symbol/;
+        my ($unit_price) = $el->{price_usd};
         my ( $mcap, $total )
             = map { large_num( $el->{$_} ) } qw/market_cap_usd total_supply/;
 
@@ -777,12 +782,12 @@ sub mcap_out {
                 . sprintf( '%.01f%%', $el->{$_} )
                 . RESET
         } qw/percent_change_1h percent_change_24h percent_change_7d/;
-        printf( "%3d %16s %7s %6.01f%% %8s %6s%%  %16s %16s %16s\n",
-                $rank, $name, $mcap, $frac_of_top, $total, $avail_pct,
-                @changes );
+        printf( "%3d %7s %7s %7.02f %6.01f%% %8s %6s%%  %16s %16s %16s\n",
+                $rank, $name, $mcap, $unit_price, $frac_of_top, $total,
+                $avail_pct, @changes );
     }
     print "  Fetched: $fetched\n";
-}
+}    # mcap_out
 #### MAIN ################################################################
 
 my $query = new CGI;
@@ -1076,10 +1081,11 @@ my $metadata = pop @{$marketcap_data};
 foreach my $entry ( @{$marketcap_data} ) {
     push @{$marketcap_table},
         { map { $_ => $entry->{$_} }
-        qw/rank name symbol market_cap_usd total_supply percent_change_7d percent_change_1h percent_change_24h available_supply/
+        qw/rank name symbol market_cap_usd total_supply percent_change_7d percent_change_1h percent_change_24h available_supply price_usd/
         };
 }
 $Data->{marketcap}->{fetched} = $marketcap_ref->[0];
+
 foreach my $tag ( "active_other_coins", "total_other_coins", "total_mcap" ) {
     $Data->{marketcap}->{$tag} = $metadata->{$tag};
 }

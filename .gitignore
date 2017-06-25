@@ -12,7 +12,7 @@ out*
 
 # dirs
 
-
+/misc-stuff
 /BitcoinDaysDestroyed
 /Changetip-data
 /PHPliteadmin
@@ -48,7 +48,5 @@ out*
 /sql-populate-price-ranges.pl
 /ticker.pl
 /timestamp.pl
-about.html
 /test
 
-about.html
