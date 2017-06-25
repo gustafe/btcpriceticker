@@ -50,3 +50,13 @@ out*
 /timestamp.pl
 /test
 
+/btcaverage_apiv2/btctracker.ini
+/btcaverage_apiv2/mcap.json
+/btcaverage_apiv2/endpoint_outputs.pl
+/btcaverage_apiv2/parse_json.pl
+/btcaverage_apiv2/parse_ticker_data.pl
+/btcaverage_apiv2/sql-fetch-all-time-data-populate-store.pl
+/btcaverage_apiv2/test_connection.pl
+/btcaverage_apiv2/ticker.json
+/btcaverage_apiv2/ticker.sql
+/btcaverage_apiv2/verify_fields

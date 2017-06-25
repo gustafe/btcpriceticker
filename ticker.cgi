@@ -610,6 +610,7 @@ sub html_out {
         push @{$marketcap_table},
             th( [ 'Currency',
                   'Marketcap USD',
+		  'Unit price',
                   'Dominance',
                   'Total supply',
                   'Available supply in %',
@@ -637,6 +638,7 @@ sub html_out {
                                          / $D->{marketcap}->{total_mcap}
                                          * 100 );
             my $total     = large_num( $entry->{total_supply} );
+	    my $unit_price =sprintf('%.02f', $entry->{price_usd});
             my $pct_avail = sprintf( '%.01f%%',
                                            $entry->{available_supply}
                                          / $entry->{total_supply}
@@ -647,7 +649,13 @@ sub html_out {
 
             push @{$marketcap_table},
                 td(
-                 [ $currency, $mcap, $dominance, $total, $pct_avail, @changes
+		   [ $currency,
+		     $mcap,
+		     $unit_price,
+		     $dominance,
+		     $total,
+		     $pct_avail,
+		     @changes
                  ] );
         }
     }
@@ -687,19 +695,19 @@ sub html_out {
 
         print table( {}, Tr( {}, $marketcap_table ) );
         print p(
-            "<sup>*</sup> For Bitcoin, values for number of coins
-		and marketcap may differ from other values on this
-		page due to different methodology and update
-		times. See ",
-            a(  {  href =>
-                       'http://gerikson.com/btcticker/about.html#marketcap' },
-                'this section' ),
-            "for more information." );
+		"<sup>*</sup> For Bitcoin, values for market cap, unit
+		price, and number of coins may differ from other
+		values on this page due to different methodology and
+		update times. See ", a( { href =>
+		'http://gerikson.com/btcticker/about.html#marketcap'
+		}, 'this section' ), "for more information."
+	       );
         print p(
-            "<sup>**</sup> Values for total supply, supply
-		percentage, and change percentages are volume-weighted
-		averages (USD marketcap used as weight)."
-        );
+		"<sup>**</sup> Values for total supply, unit price,
+		supply percentage, and change percentages are
+		volume-weighted averages (USD marketcap used as
+		weight)."
+	       );
     }
     print "<a id='extrapolated'></a>";
     print h2("Historical prices compared to extrapolated trends");
