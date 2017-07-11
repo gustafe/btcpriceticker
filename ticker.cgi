@@ -475,7 +475,7 @@ sub console_out {
             $diff = GREEN . sprintf( "%+.02f",   $diff ) . RESET;
             $pct  = GREEN . sprintf( "%+.01f%%", $pct ) . RESET;
         }
-        printf( "%19s %10s %8s %18s %17s %8s %8s\n",
+        printf( "%19s %10s %8.02f %18s %17s %8s %8s\n",
                 $label, '[' . $date . ']',
                 $price, $diff, $pct, $vol, $mcap );
     }
@@ -501,16 +501,6 @@ sub html_out {
     my ($D) = @_;
     my $about_page = 'http://gerikson.com/btcticker/about.html';
     my $last = sprintf( "%.02f", $D->{ticker}->{last} );
-    print header;
-    print start_html(
-           -title => "\$$last",
-           -head  => [
-               Link(
-                   { -rel   => 'stylesheet',
-                     -type  => 'text/css',
-                     -media => 'all',
-                     -href  => 'http://gerikson.com/stylesheets/btcticker.css'
-                   } ) ] );
     my $array     = $D->{layout};
     my $diff      = $array->[0]->[1];
     my $coins_now = $D->{est_no_of_coins};
@@ -643,9 +633,11 @@ sub html_out {
                                            $entry->{available_supply}
                                          / $entry->{total_supply}
                                          * 100 );
-            my @changes
-                = map { color_num( $entry->{ 'percent_change_' . $_ } . '%' ) }
-                qw/1h 24h 7d/;
+            my @changes = map {
+                defined( $entry->{ 'percent_change_' . $_ } ) # check if there is data...
+                    ? (color_num( $entry->{ 'percent_change_' . $_ } . '%' ) )
+                    : 'n/a'
+            } qw/1h 24h 7d/;
 
             push @{$marketcap_table},
                 td(
@@ -669,6 +661,18 @@ sub html_out {
     }
 
     ### Output ########################################
+
+    print header;
+    print start_html(
+           -title => "\$$last",
+           -head  => [
+               Link(
+                   { -rel   => 'stylesheet',
+                     -type  => 'text/css',
+                     -media => 'all',
+                     -href  => 'http://gerikson.com/stylesheets/btcticker.css'
+                   } ) ] );
+
     print h1( nformat($last) );
 
     print p( sprintf( "Updated on %s (%s ago).",
@@ -686,7 +690,8 @@ sub html_out {
     print h2("Current price compared to historical prices");
     print table( {}, Tr( {}, $hist_table ) );
     if ( $config->{show_cap_html} ) {
-        print h2("Current cryptocurrency marketcaps");
+        print h2('Current cryptocurrency "marketcaps"');
+	print p("A more correct term is aggregated value - it's the product of last price and outstanding coins or tokens.");
         print p( "Data from ",
                  a( { href => "https://coinmarketcap.com/" },
                      "Coinmarketcap.com" )
@@ -767,7 +772,7 @@ sub mcap_out {
     my $total_mcap = $D->{marketcap}->{total_mcap};
     my $list       = $D->{marketcap}->{list};
     print BLUE;
-    printf( "%3s %7s %7s %7s %7s %8s %7s %8s %7s %7s",
+    printf( "%3s %7s %8s %7s %7s %8s %7s %8s %7s %7s",
             '#',     'Coin',   'Mcap', 'Price', 'Domi',
             'Total', 'Avail%', '1h',   '24h',   '7d' );
     print RESET. "\n";
@@ -784,13 +789,14 @@ sub mcap_out {
             : sprintf( '%.01f', $avail_pct );
         my $frac_of_top = $el->{market_cap_usd} / $total_mcap * 100;
         my @changes     = map {
+	    defined $el->{$_} ? ( # need to code defensively if there's no actual data
             $el->{$_} < 0
                 ? RED . sprintf( '%.01f%%', $el->{$_} ) . RESET
                 : GREEN
                 . sprintf( '%.01f%%', $el->{$_} )
-                . RESET
+                . RESET) : YELLOW.'n/a'.RESET
         } qw/percent_change_1h percent_change_24h percent_change_7d/;
-        printf( "%3d %7s %7s %7.02f %6.01f%% %8s %6s%%  %16s %16s %16s\n",
+        printf( "%3d %7s %8s %7.02f %6.01f%% %8s %6s%%  %16s %16s %16s\n",
                 $rank, $name, $mcap, $unit_price, $frac_of_top, $total,
                 $avail_pct, @changes );
     }
@@ -855,6 +861,7 @@ $sth = $dbh->prepare( $Sql{historical_coins} );
 $rv  = $sth->execute();
 warn DBI->errstr if $rv < 0;
 $historical_coins = $sth->fetchall_hashref(1);    # used in the sub
+# $Data->{scaffolding}->{historical_coins}= $historical_coins;
 $sth->finish();
 my $coins_now = number_of_bitcoins( DateTime->now->jd() );
 
