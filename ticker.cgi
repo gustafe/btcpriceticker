@@ -598,29 +598,36 @@ sub html_out {
 
         #	my $metadata = pop @{$D->{marketcap}->{list}};
         push @{$marketcap_table},
-            th( [ 'Currency',
-                  'Marketcap USD',
+	  th( [ 'Rank',
+		'Currency (symbol)',
+		'Marketcap USD',
 		  'Unit price',
+
                   'Dominance',
+
                   'Total supply',
                   'Available supply in %',
                   '1h change',
                   '24h change',
                   '7d change' ] );
         for my $entry ( @{ $D->{marketcap}->{list} } ) {
+	    my $rank;
             my $currency;
             if ( $entry->{symbol} eq 'others' ) {
                 $currency
                     = $entry->{name} . ' ('
                     . $D->{marketcap}->{total_other_coins}
                     . ' coins)<sup>**</sup>';
+		$rank = 'n/a';
             } elsif ( $entry->{symbol} eq 'BTC' ) {
                 $currency
                     = $entry->{name} . ' ('
                     . $entry->{symbol}
                     . ')<sup>*</sup>';
+		$rank=$entry->{rank};
             } else {
                 $currency = $entry->{name} . ' (' . $entry->{symbol} . ')';
+		$rank=$entry->{rank};
             }
             my $mcap      = large_num( $entry->{market_cap_usd} );
             my $dominance = sprintf( '%.01f%%',
@@ -641,7 +648,8 @@ sub html_out {
 
             push @{$marketcap_table},
                 td(
-		   [ $currency,
+		   [ $rank, $currency,
+
 		     $mcap,
 		     $unit_price,
 		     $dominance,
