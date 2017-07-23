@@ -6,9 +6,12 @@ use List::Util qw/max/;
 
 #use LWP::UserAgent;
 use BTCtracker qw/get_dbh get_ua/;
-my $debug = 0;
+my $debug                  = 0;
+my $no_of_coins_to_display = 15;
+
 #my $url   = 'https://api.coinmarketcap.com/v1/ticker/?limit=10';
-my $url   = 'https://api.coinmarketcap.com/v1/ticker/';
+my $url = 'https://api.coinmarketcap.com/v1/ticker/';
+
 #my $url   = 'https://api.coinmarketcap.com/v1/ticker/';
 my $sql = "insert into coinmarketcap (timestamp, data)
 values (datetime(?,'unixepoch'),?)";
@@ -24,7 +27,7 @@ if ( !$response->is_success ) {
 
     my $out;
     my @times;
-    my $el_count =1;
+    my $el_count    = 1;
     my $total_count = 0;
     my $ok_count    = 0;
     my $sum_other   = 0;
@@ -34,17 +37,16 @@ if ( !$response->is_success ) {
                      percent_change_1h  => 0,
                      percent_change_24h => 0,
                      percent_change_7d  => 0,
-		     price_usd=>0
-		   );
+                     price_usd          => 0 );
     my $others_ref = { name => 'Others', symbol => 'others', id => 'others' };
 
     for my $el ( @{$info} ) {
-        if ( $el_count <= 10 ) {
+        if ( $el_count <= $no_of_coins_to_display ) {
             push @{$out}, $el;
             push @times, $el->{last_updated};
             $sum_top += $el->{market_cap_usd};
         } else {
-	    
+
             $total_count++;
             next unless defined( $el->{market_cap_usd} );
 
