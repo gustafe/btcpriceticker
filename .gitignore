@@ -60,3 +60,4 @@ out*
 /btcaverage_apiv2/ticker.json
 /btcaverage_apiv2/ticker.sql
 /btcaverage_apiv2/verify_fields
+/marketcap-difference.pl
