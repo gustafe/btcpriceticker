@@ -675,6 +675,37 @@ sub html_out {
         push @{$future_table}, td($line);
     }
 
+    ### =================================================
+    my @draper = map {$D->{draper}->{$_}} qw/coins price_at_purchase/;
+    my @past_events = (
+        {  header  => "Tim Draper's coins from Silk Road",
+           content => [
+               sprintf(
+"On 27 Jun 2014, investor Tim Draper paid approximately USD&nbsp;%.02f/coin for %s BTC seized from Silk Road. ",
+                   $draper[1], $draper[0] ),
+               sprintf( "Purchase price: USD&nbsp;%s",
+                        large_num( $draper[0] * $draper[1] ) ),
+               sprintf( "Price now: USD&nbsp;%s", large_num( $draper[0] * $last ) ),
+               sprintf( "Draper's win/loss: USD&nbsp;%s",
+                        large_num( $draper[0] * ( $last - $draper[1] ) ) ), ]
+        },
+        {  header  => "The Bitcoin pizza",
+           content => [
+"On 22nd May 2010, Bitcoin enthusiast Laszlo Hanyec bought a pizza for 10,000 bitcoins. More specifically, he sent the coins to someone else who purchased the pizza for him.",
+               sprintf( "The Bitcoin pizza is currently worth USD&nbsp;%s.",
+                        nformat( 10_000 * $last ) ),
+"See the <a href='https://twitter.com/bitcoin_pizza'>\@bitcoin_pizza</a> Twitter account for up-to-date values!",
+		      ], },
+		       {header=>"The white Mini Cooper",
+			content=>[sprintf("On 7 Jun 2014, Andreas M. Antonopoulos offered a white Mini Cooper for sale for 14BTC. At the time, the VWAP was USD&nbsp;652.76, so the sales price (assuming it went through) was USD&nbsp;%s.", nformat(14*652.76)),
+				  sprintf("Today, the same car is worth USD&nbsp;%s.", nformat(14*$last)),
+				  "(Source: <a href='https://twitter.com/aantonop/status/475048024453152768'>\@aantonop tweet</a>.)"
+				 ],},
+		       {header=>"2016 Bitfinex hack",
+			content=>["On 2 Aug 2016, the exchange Bitfinex announced they had suffered a security breach and that 119,756 BTC were stolen.",
+				 sprintf("Current value of the stolen coins is USD&nbsp;%s.",nformat(119_756 * $last))],},
+		      );
+
     ### Output ########################################
 
     print header;
@@ -742,6 +773,15 @@ sub html_out {
         print p("The price will never change in the future.");
     } else {
         print table( {}, Tr( {}, $future_table ) );
+    }
+
+    print h2("Random stats and figures");
+
+    foreach my $item ( @past_events ){
+	print h3($item->{header});
+	foreach my $line ( @{$item->{content}}) {
+	    print p($line);
+	}
     }
 
     ### End matter ########################################

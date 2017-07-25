@@ -7,8 +7,9 @@ ticker.cgi-*
 *.zip
 err*
 out*
-*.txt
+
 *.csv
+*.html
 
 # dirs
 
@@ -61,3 +62,9 @@ out*
 /btcaverage_apiv2/ticker.sql
 /btcaverage_apiv2/verify_fields
 /marketcap-difference.pl
+about.html
+/About-page/build/about.html
+/first-cross.txt
+/notes.txt
+/timeline-notes.txt
+/build
