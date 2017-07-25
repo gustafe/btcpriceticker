@@ -460,8 +460,7 @@ sub console_out {
                  'spread', $d->[0], $d->[1], 'spread', $d->[2], $d->[3],
                  'Coins', large_num( $d->[-1] ) );
 
-    print join( "\n", @out );
-    print "\n";
+    #print "\n";
     foreach my $line ( @{ $D->{history} } ) {
         my ( $label, $date, $price, $diff, $pct, $vol, $mcap, $short )
             = @{$line}[ 0 .. 7 ];
@@ -475,9 +474,17 @@ sub console_out {
             $diff = GREEN . sprintf( "%+.02f",   $diff ) . RESET;
             $pct  = GREEN . sprintf( "%+.01f%%", $pct ) . RESET;
         }
-        printf( "%19s %10s %8.02f %18s %17s %8s %8s\n",
+        push @out, sprintf( "%19s %10s %8.02f %18s %17s %8s %8s",
                 $label, '[' . $date . ']',
                 $price, $diff, $pct, $vol, $mcap );
+    }
+    # pad the output to fit a screen
+    my $line_diff = 22 - scalar @out;
+    my $idx = 0;
+    print join( "\n", @out );
+    while ( $idx < $line_diff ) {
+	print "\n";
+	$idx++;
     }
 }    # console_out
 
@@ -648,8 +655,8 @@ sub html_out {
 
             push @{$marketcap_table},
                 td(
-		   [ $rank, $currency,
-
+		   [ $rank,
+		     $currency,
 		     $mcap,
 		     $unit_price,
 		     $dominance,
@@ -784,6 +791,7 @@ sub mcap_out {
             '#',     'Coin',   'Mcap', 'Price', 'Domi',
             'Total', 'Avail%', '1h',   '24h',   '7d' );
     print RESET. "\n";
+    my $line_count = 1;
     foreach my $el ( @{$list} ) {
         my ( $rank, $name ) = map { $el->{$_} } qw/rank symbol/;
         my ($unit_price) = $el->{price_usd};
@@ -807,7 +815,17 @@ sub mcap_out {
         printf( "%3d %7s %8s %7.02f %6.01f%% %8s %6s%%  %16s %16s %16s\n",
                 $rank, $name, $mcap, $unit_price, $frac_of_top, $total,
                 $avail_pct, @changes );
+	$line_count++;
     }
+
+    # pad the output to fit the screen
+    my $line_diff = 20 - $line_count;
+    my $idx = 0;
+    while ( $idx < $line_diff ) {
+	print "\n";
+	$idx++;
+    }
+    
     print "  Fetched: $fetched\n";
 }    # mcap_out
 #### MAIN ################################################################
