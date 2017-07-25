@@ -9,7 +9,6 @@ err*
 out*
 
 *.csv
-*.html
 
 # dirs
 
@@ -67,4 +66,4 @@ about.html
 /first-cross.txt
 /notes.txt
 /timeline-notes.txt
-/build
+/About-page/build/*
