@@ -474,17 +474,19 @@ sub console_out {
             $diff = GREEN . sprintf( "%+.02f",   $diff ) . RESET;
             $pct  = GREEN . sprintf( "%+.01f%%", $pct ) . RESET;
         }
-        push @out, sprintf( "%19s %10s %8.02f %18s %17s %8s %8s",
-                $label, '[' . $date . ']',
-                $price, $diff, $pct, $vol, $mcap );
+        push @out,
+            sprintf( "%19s %10s %8.02f %18s %17s %8s %8s",
+                     $label, '[' . $date . ']',
+                     $price, $diff, $pct, $vol, $mcap );
     }
+
     # pad the output to fit a screen
     my $line_diff = 22 - scalar @out;
-    my $idx = 0;
+    my $idx       = 0;
     print join( "\n", @out );
     while ( $idx < $line_diff ) {
-	print "\n";
-	$idx++;
+        print "\n";
+        $idx++;
     }
 }    # console_out
 
@@ -507,7 +509,7 @@ sub json_out {
 sub html_out {
     my ($D) = @_;
     my $about_page = 'http://gerikson.com/btcticker/about.html';
-    my $last = sprintf( "%.02f", $D->{ticker}->{last} );
+    my $last      = sprintf( "%.02f", $D->{ticker}->{last} );
     my $array     = $D->{layout};
     my $diff      = $array->[0]->[1];
     my $coins_now = $D->{est_no_of_coins};
@@ -604,66 +606,61 @@ sub html_out {
     if ( $config->{show_cap_html} ) {
 
         #	my $metadata = pop @{$D->{marketcap}->{list}};
-        push @{$marketcap_table},
-	  th( [ 'Rank',
-		'Currency (symbol)',
-		'Marketcap USD',
-		  'Unit price',
+        push @{$marketcap_table}, th(
+            [  'Rank',
+               'Currency (symbol)',
+               'Marketcap USD',
+               'Unit price',
 
-                  'Dominance',
+               'Dominance',
 
-                  'Total supply',
-                  'Available supply in %',
-                  '1h change',
-                  '24h change',
-                  '7d change' ] );
+               'Total supply',
+               'Available supply in %',
+               '1h change',
+               '24h change',
+               '7d change' ] );
         for my $entry ( @{ $D->{marketcap}->{list} } ) {
-	    my $rank;
+            my $rank;
             my $currency;
             if ( $entry->{symbol} eq 'others' ) {
                 $currency
                     = $entry->{name} . ' ('
                     . $D->{marketcap}->{total_other_coins}
                     . ' coins)<sup>**</sup>';
-		$rank = 'n/a';
+                $rank = 'n/a';
             } elsif ( $entry->{symbol} eq 'BTC' ) {
                 $currency
                     = $entry->{name} . ' ('
                     . $entry->{symbol}
                     . ')<sup>*</sup>';
-		$rank=$entry->{rank};
+                $rank = $entry->{rank};
             } else {
                 $currency = $entry->{name} . ' (' . $entry->{symbol} . ')';
-		$rank=$entry->{rank};
+                $rank     = $entry->{rank};
             }
-            my $mcap      = large_num( $entry->{market_cap_usd} );
-            my $dominance = sprintf( '%.01f%%',
-                                           $entry->{market_cap_usd}
-                                         / $D->{marketcap}->{total_mcap}
-                                         * 100 );
-            my $total     = large_num( $entry->{total_supply} );
-	    my $unit_price =sprintf('%.02f', $entry->{price_usd});
-            my $pct_avail = sprintf( '%.01f%%',
-                                           $entry->{available_supply}
-                                         / $entry->{total_supply}
-                                         * 100 );
+            my $mcap = large_num( $entry->{market_cap_usd} );
+            my $dominance;
+                $dominance = sprintf( '%.01f%%',
+                                            $entry->{market_cap_usd}
+                                          / $D->{marketcap}->{total_mcap}
+                                          * 100 );
+            my $total = large_num( $entry->{total_supply} );
+            my $unit_price = sprintf( '%.02f', $entry->{price_usd} );
+            my $pct_avail;
+                $pct_avail = sprintf( '%.01f%%',
+                                            $entry->{available_supply}
+                                          / $entry->{total_supply}
+                                          * 100 );
             my @changes = map {
-                defined( $entry->{ 'percent_change_' . $_ } ) # check if there is data...
+                defined( $entry->{ 'percent_change_' . $_ }
+                    )    # check if there is data...
                     ? (color_num( $entry->{ 'percent_change_' . $_ } . '%' ) )
                     : 'n/a'
             } qw/1h 24h 7d/;
 
             push @{$marketcap_table},
-                td(
-		   [ $rank,
-		     $currency,
-		     $mcap,
-		     $unit_price,
-		     $dominance,
-		     $total,
-		     $pct_avail,
-		     @changes
-                 ] );
+                td( [ $rank,      $currency, $mcap,      $unit_price,
+                      $dominance, $total,    $pct_avail, @changes ] );
         }
     }
 
@@ -676,7 +673,7 @@ sub html_out {
     }
 
     ### =================================================
-    my @draper = map {$D->{draper}->{$_}} qw/coins price_at_purchase/;
+    my @draper = map { $D->{draper}->{$_} } qw/coins price_at_purchase/;
     my @past_events = (
         {  header  => "Tim Draper's coins from Silk Road",
            content => [
@@ -685,7 +682,8 @@ sub html_out {
                    $draper[1], $draper[0] ),
                sprintf( "Purchase price: USD&nbsp;%s",
                         large_num( $draper[0] * $draper[1] ) ),
-               sprintf( "Price now: USD&nbsp;%s", large_num( $draper[0] * $last ) ),
+               sprintf( "Price now: USD&nbsp;%s",
+                        large_num( $draper[0] * $last ) ),
                sprintf( "Draper's win/loss: USD&nbsp;%s",
                         large_num( $draper[0] * ( $last - $draper[1] ) ) ), ]
         },
@@ -695,22 +693,28 @@ sub html_out {
                sprintf( "The Bitcoin pizza is currently worth USD&nbsp;%s.",
                         nformat( 10_000 * $last ) ),
 "See the <a href='https://twitter.com/bitcoin_pizza'>\@bitcoin_pizza</a> Twitter account for up-to-date values!",
-		      ], },
-		       {header=>"The white Mini Cooper",
-			content=>[sprintf("On 7 Jun 2014, Andreas M. Antonopoulos offered a white Mini Cooper for sale for 14BTC. At the time, the VWAP was USD&nbsp;652.76, so the sales price (assuming it went through) was USD&nbsp;%s.", nformat(14*652.76)),
-				  sprintf("Today, the same car is worth USD&nbsp;%s.", nformat(14*$last)),
-				  "(Source: <a href='https://twitter.com/aantonop/status/475048024453152768'>\@aantonop tweet</a>.)"
-				 ],},
-		       {header=>"2016 Bitfinex hack",
-			content=>["On 2 Aug 2016, the exchange Bitfinex announced they had suffered a security breach and that 119,756 BTC were stolen.",
-				 sprintf("Current value of the stolen coins is USD&nbsp;%s.",nformat(119_756 * $last))],},
-		      );
+           ], },
+        {  header  => "The white Mini Cooper",
+           content => [
+               sprintf(
+"On 7 Jun 2014, Andreas M. Antonopoulos offered a white Mini Cooper for sale for 14BTC. At the time, the VWAP was USD&nbsp;652.76, so the sales price (assuming it went through) was USD&nbsp;%s.",
+                   nformat( 14 * 652.76 ) ),
+               sprintf( "Today, the same car is worth USD&nbsp;%s.",
+                        nformat( 14 * $last ) ),
+"(Source: <a href='https://twitter.com/aantonop/status/475048024453152768'>\@aantonop tweet</a>.)"
+           ], },
+        {  header  => "2016 Bitfinex hack",
+           content => [
+"On 2 Aug 2016, the exchange Bitfinex announced they had suffered a security breach and that 119,756 BTC were stolen.",
+               sprintf( "Current value of the stolen coins is USD&nbsp;%s.",
+                        nformat( 119_756 * $last ) ) ], }, );
 
     ### Output ########################################
 
     print header;
+    my $title = sprintf( "\$%s (%+.02f)", $last, $diff );
     print start_html(
-           -title => "\$$last",
+           -title => "$title",
            -head  => [
                Link(
                    { -rel   => 'stylesheet',
@@ -737,7 +741,9 @@ sub html_out {
     print table( {}, Tr( {}, $hist_table ) );
     if ( $config->{show_cap_html} ) {
         print h2('Current cryptocurrency "marketcaps"');
-	print p("A more correct term is aggregated value - it's the product of last price and outstanding coins or tokens.");
+        print p(
+"A more correct term is aggregated value - it's the product of last price and outstanding coins or tokens."
+        );
         print p( "Data from ",
                  a( { href => "https://coinmarketcap.com/" },
                      "Coinmarketcap.com" )
@@ -746,19 +752,20 @@ sub html_out {
 
         print table( {}, Tr( {}, $marketcap_table ) );
         print p(
-		"<sup>*</sup> For Bitcoin, values for market cap, unit
+            "<sup>*</sup> For Bitcoin, values for market cap, unit
 		price, and number of coins may differ from other
 		values on this page due to different methodology and
-		update times. See ", a( { href =>
-		'http://gerikson.com/btcticker/about.html#marketcap'
-		}, 'this section' ), "for more information."
-	       );
+		update times. See ",
+            a(  {  href =>
+                       'http://gerikson.com/btcticker/about.html#marketcap' },
+                'this section' ),
+            "for more information." );
         print p(
-		"<sup>**</sup> Values for total supply, unit price,
+            "<sup>**</sup> Values for total supply, unit price,
 		supply percentage, and change percentages are
 		volume-weighted averages (USD marketcap used as
 		weight)."
-	       );
+        );
     }
     print "<a id='extrapolated'></a>";
     print h2("Historical prices compared to extrapolated trends");
@@ -777,11 +784,11 @@ sub html_out {
 
     print h2("Random stats and figures");
 
-    foreach my $item ( @past_events ){
-	print h3($item->{header});
-	foreach my $line ( @{$item->{content}}) {
-	    print p($line);
-	}
+    foreach my $item (@past_events) {
+        print h3( $item->{header} );
+        foreach my $line ( @{ $item->{content} } ) {
+            print p($line);
+        }
     }
 
     ### End matter ########################################
@@ -827,45 +834,51 @@ sub mcap_out {
     my $total_mcap = $D->{marketcap}->{total_mcap};
     my $list       = $D->{marketcap}->{list};
     print BLUE;
-    printf( "%3s %7s %8s %7s %7s %8s %7s %8s %7s %7s",
+    printf( "%4s %7s %8s %7s %7s %8s %7s %8s %7s %7s",
             '#',     'Coin',   'Mcap', 'Price', 'Domi',
             'Total', 'Avail%', '1h',   '24h',   '7d' );
     print RESET. "\n";
     my $line_count = 1;
+
     foreach my $el ( @{$list} ) {
         my ( $rank, $name ) = map { $el->{$_} } qw/rank symbol/;
         my ($unit_price) = $el->{price_usd};
         my ( $mcap, $total )
             = map { large_num( $el->{$_} ) } qw/market_cap_usd total_supply/;
-
-        my $avail_pct = $el->{available_supply} / $el->{total_supply} * 100;
-        $avail_pct
-            = $avail_pct == 100
-            ? sprintf( '%02d',  $avail_pct )
-            : sprintf( '%.01f', $avail_pct );
+        my $avail_pct;
+        if ( defined $el->{total_supply} ) {
+            $avail_pct = $el->{available_supply} / $el->{total_supply} * 100;
+            $avail_pct
+                = $avail_pct == 100
+                ? sprintf( '%02d',  $avail_pct )
+                : sprintf( '%.01f', $avail_pct );
+        } else {
+            $avail_pct = 'n/a';
+        }
         my $frac_of_top = $el->{market_cap_usd} / $total_mcap * 100;
         my @changes     = map {
-	    defined $el->{$_} ? ( # need to code defensively if there's no actual data
-            $el->{$_} < 0
+            defined $el->{$_}
+                ? (    # need to code defensively if there's no actual data
+                $el->{$_} < 0
                 ? RED . sprintf( '%.01f%%', $el->{$_} ) . RESET
-                : GREEN
-                . sprintf( '%.01f%%', $el->{$_} )
-                . RESET) : YELLOW.'n/a'.RESET
+                : GREEN . sprintf( '%.01f%%', $el->{$_} ) . RESET )
+                : YELLOW . 'n/a'
+                . RESET
         } qw/percent_change_1h percent_change_24h percent_change_7d/;
-        printf( "%3d %7s %8s %7.02f %6.01f%% %8s %6s%%  %16s %16s %16s\n",
+        printf( "%4d %7s %8s %7.02f %6.01f%% %8s %6s%%  %16s %16s %16s\n",
                 $rank, $name, $mcap, $unit_price, $frac_of_top, $total,
                 $avail_pct, @changes );
-	$line_count++;
+        $line_count++;
     }
 
     # pad the output to fit the screen
     my $line_diff = 20 - $line_count;
-    my $idx = 0;
+    my $idx       = 0;
     while ( $idx < $line_diff ) {
-	print "\n";
-	$idx++;
+        print "\n";
+        $idx++;
     }
-    
+
     print "  Fetched: $fetched\n";
 }    # mcap_out
 #### MAIN ################################################################
@@ -927,6 +940,7 @@ $sth = $dbh->prepare( $Sql{historical_coins} );
 $rv  = $sth->execute();
 warn DBI->errstr if $rv < 0;
 $historical_coins = $sth->fetchall_hashref(1);    # used in the sub
+
 # $Data->{scaffolding}->{historical_coins}= $historical_coins;
 $sth->finish();
 my $coins_now = number_of_bitcoins( DateTime->now->jd() );
