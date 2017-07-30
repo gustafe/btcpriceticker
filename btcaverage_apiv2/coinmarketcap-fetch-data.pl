@@ -41,10 +41,15 @@ if ( !$response->is_success ) {
     my $others_ref = { name => 'Others', symbol => 'others', id => 'others' };
 
     for my $el ( @{$info} ) {
-        if ( $el_count <= $no_of_coins_to_display ) {
+        if (    $el_count <= $no_of_coins_to_display
+             or $el->{symbol} eq 'TIT'
+		or $el->{symbol} eq 'USDT'
+	#	or $el->{symbol} eq 'BCC'
+	   )
+        {
             push @{$out}, $el;
             push @times, $el->{last_updated};
-            $sum_top += $el->{market_cap_usd};
+            $sum_top += $el->{market_cap_usd}?$el->{market_cap_usd}:0;
         } else {
 
             $total_count++;
