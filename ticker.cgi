@@ -611,9 +611,7 @@ sub html_out {
                'Currency (symbol)',
                'Marketcap USD',
                'Unit price',
-
                'Dominance',
-
                'Total supply',
                'Available supply in %',
                '1h change',
@@ -638,19 +636,35 @@ sub html_out {
                 $currency = $entry->{name} . ' (' . $entry->{symbol} . ')';
                 $rank     = $entry->{rank};
             }
-            my $mcap = large_num( $entry->{market_cap_usd} );
-            my $dominance;
-                $dominance = sprintf( '%.01f%%',
+	    my $mcap;
+	    my $dominance;
+	    if ( defined $entry->{market_cap_usd} ) { 
+            $mcap = large_num( $entry->{market_cap_usd} );
+	    $dominance = sprintf( '%.01f%%',
                                             $entry->{market_cap_usd}
                                           / $D->{marketcap}->{total_mcap}
-                                          * 100 );
-            my $total = large_num( $entry->{total_supply} );
+				  * 100 );
+	} else {
+	    $mcap = 'n/a';
+	    $dominance='n/a';
+	}
+	    my $total;
+	    if ( defined $entry->{total_supply} ) {
+		$total = large_num( $entry->{total_supply} )}
+	    else {
+		$total ='n/a'
+	    }
+	    
             my $unit_price = sprintf( '%.02f', $entry->{price_usd} );
             my $pct_avail;
+	    if ( defined $entry->{total_supply} and defined $entry->{available_supply} ) { 
                 $pct_avail = sprintf( '%.01f%%',
                                             $entry->{available_supply}
                                           / $entry->{total_supply}
-                                          * 100 );
+				      * 100 );
+	    } else {
+		$pct_avail = 'n/a';
+	    }
             my @changes = map {
                 defined( $entry->{ 'percent_change_' . $_ }
                     )    # check if there is data...
@@ -844,7 +858,7 @@ sub mcap_out {
         my ( $rank, $name ) = map { $el->{$_} } qw/rank symbol/;
         my ($unit_price) = $el->{price_usd};
         my ( $mcap, $total )
-            = map { large_num( $el->{$_} ) } qw/market_cap_usd total_supply/;
+            = map { defined( $el->{$_}) ? large_num( $el->{$_} ) : 'n/a' } qw/market_cap_usd total_supply/;
         my $avail_pct;
         if ( defined $el->{total_supply} ) {
             $avail_pct = $el->{available_supply} / $el->{total_supply} * 100;
@@ -855,7 +869,13 @@ sub mcap_out {
         } else {
             $avail_pct = 'n/a';
         }
-        my $frac_of_top = $el->{market_cap_usd} / $total_mcap * 100;
+        my $frac_of_top;
+	if ( defined  $el->{market_cap_usd} ) {
+	    $frac_of_top = sprintf("%6.01f%%",$el->{market_cap_usd} / $total_mcap * 100);
+	}else{
+	    $frac_of_top = 'n/a';
+	}
+
         my @changes     = map {
             defined $el->{$_}
                 ? (    # need to code defensively if there's no actual data
@@ -865,7 +885,7 @@ sub mcap_out {
                 : YELLOW . 'n/a'
                 . RESET
         } qw/percent_change_1h percent_change_24h percent_change_7d/;
-        printf( "%4d %7s %8s %7.02f %6.01f%% %8s %6s%%  %16s %16s %16s\n",
+        printf( "%4d %7s %8s %7.02f %7s %8s %6s%%  %16s %16s %16s\n",
                 $rank, $name, $mcap, $unit_price, $frac_of_top, $total,
                 $avail_pct, @changes );
         $line_count++;
