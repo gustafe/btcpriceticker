@@ -42,9 +42,9 @@ if ( !$response->is_success ) {
 
     for my $el ( @{$info} ) {
         if (    $el_count <= $no_of_coins_to_display
-             or $el->{symbol} eq 'TIT'
+        #     or $el->{symbol} eq 'TIT'
 		or $el->{symbol} eq 'USDT'
-	#	or $el->{symbol} eq 'BCC'
+		or $el->{symbol} eq 'BCH'
 	   )
         {
             push @{$out}, $el;
