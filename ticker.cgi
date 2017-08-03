@@ -853,12 +853,24 @@ sub mcap_out {
             'Total', 'Avail%', '1h',   '24h',   '7d' );
     print RESET. "\n";
     my $line_count = 1;
-
+    my @volumes;
+    my ( $btc_price, $bch_price );
     foreach my $el ( @{$list} ) {
         my ( $rank, $name ) = map { $el->{$_} } qw/rank symbol/;
         my ($unit_price) = $el->{price_usd};
-        my ( $mcap, $total )
-            = map { defined( $el->{$_}) ? large_num( $el->{$_} ) : 'n/a' } qw/market_cap_usd total_supply/;
+        my ( $mcap, $total, $_24h_vol )
+	  = map { defined( $el->{$_}) ? large_num( $el->{$_} ) : 'n/a' } qw/market_cap_usd total_supply 24h_volume_usd/;
+
+	# some hackery for specific volumes and prices
+	if ( $name eq 'BTC' ) { 
+	    push @volumes, {symbol=>$name, volume=>$_24h_vol};
+	    $btc_price = $unit_price;
+	} elsif ( $name eq 'BCH' ) {
+	    push @volumes, {symbol=>$name, volume=>$_24h_vol};
+	    $bch_price = $unit_price;
+	} elsif ( $name eq 'ETH' ) {
+	    push @volumes, {symbol=>$name, volume=>$_24h_vol};
+	}
         my $avail_pct;
         if ( defined $el->{total_supply} ) {
             $avail_pct = $el->{available_supply} / $el->{total_supply} * 100;
@@ -890,7 +902,15 @@ sub mcap_out {
                 $avail_pct, @changes );
         $line_count++;
     }
-
+    # some extra data
+    print '  24h volumes - ';
+    foreach my $el ( @volumes ) {
+	print $el->{symbol}. ': '.$el->{volume} . ' ';
+    }
+    print "\n";
+    $line_count++;
+    printf("  BCH / BTC = %.04f\n", $bch_price/$btc_price);
+    $line_count++;
     # pad the output to fit the screen
     my $line_diff = 20 - $line_count;
     my $idx       = 0;
@@ -1196,7 +1216,7 @@ my $metadata = pop @{$marketcap_data};
 foreach my $entry ( @{$marketcap_data} ) {
     push @{$marketcap_table},
         { map { $_ => $entry->{$_} }
-        qw/rank name symbol market_cap_usd total_supply percent_change_7d percent_change_1h percent_change_24h available_supply price_usd/
+        qw/rank name symbol market_cap_usd total_supply percent_change_7d percent_change_1h percent_change_24h available_supply price_usd 24h_volume_usd/
         };
 }
 $Data->{marketcap}->{fetched} = $marketcap_ref->[0];
