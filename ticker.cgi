@@ -606,17 +606,17 @@ sub html_out {
     if ( $config->{show_cap_html} ) {
 
         #	my $metadata = pop @{$D->{marketcap}->{list}};
-        push @{$marketcap_table}, th(
-            [  'Rank',
-               'Currency (symbol)',
-               'Marketcap USD',
-               'Unit price',
-               'Dominance',
-               'Total supply',
-               'Available supply in %',
-               '1h change',
-               '24h change',
-               '7d change' ] );
+        push @{$marketcap_table},
+            th( [ 'Rank',
+                  'Currency (symbol)',
+                  'Marketcap USD',
+                  'Unit price',
+                  'Dominance',
+                  'Total supply',
+                  'Available supply in %',
+                  '1h change',
+                  '24h change',
+                  '7d change' ] );
         for my $entry ( @{ $D->{marketcap}->{list} } ) {
             my $rank;
             my $currency;
@@ -636,35 +636,37 @@ sub html_out {
                 $currency = $entry->{name} . ' (' . $entry->{symbol} . ')';
                 $rank     = $entry->{rank};
             }
-	    my $mcap;
-	    my $dominance;
-	    if ( defined $entry->{market_cap_usd} ) { 
-            $mcap = large_num( $entry->{market_cap_usd} );
-	    $dominance = sprintf( '%.01f%%',
+            my $mcap;
+            my $dominance;
+            if ( defined $entry->{market_cap_usd} ) {
+                $mcap      = large_num( $entry->{market_cap_usd} );
+                $dominance = sprintf( '%.01f%%',
                                             $entry->{market_cap_usd}
                                           / $D->{marketcap}->{total_mcap}
-				  * 100 );
-	} else {
-	    $mcap = 'n/a';
-	    $dominance='n/a';
-	}
-	    my $total;
-	    if ( defined $entry->{total_supply} ) {
-		$total = large_num( $entry->{total_supply} )}
-	    else {
-		$total ='n/a'
-	    }
-	    
+                                          * 100 );
+            } else {
+                $mcap      = 'n/a';
+                $dominance = 'n/a';
+            }
+            my $total;
+            if ( defined $entry->{total_supply} ) {
+                $total = large_num( $entry->{total_supply} );
+            } else {
+                $total = 'n/a';
+            }
+
             my $unit_price = sprintf( '%.02f', $entry->{price_usd} );
             my $pct_avail;
-	    if ( defined $entry->{total_supply} and defined $entry->{available_supply} ) { 
+            if (     defined $entry->{total_supply}
+                 and defined $entry->{available_supply} )
+            {
                 $pct_avail = sprintf( '%.01f%%',
                                             $entry->{available_supply}
                                           / $entry->{total_supply}
-				      * 100 );
-	    } else {
-		$pct_avail = 'n/a';
-	    }
+                                          * 100 );
+            } else {
+                $pct_avail = 'n/a';
+            }
             my @changes = map {
                 defined( $entry->{ 'percent_change_' . $_ }
                     )    # check if there is data...
@@ -855,22 +857,27 @@ sub mcap_out {
     my $line_count = 1;
     my @volumes;
     my ( $btc_price, $bch_price );
+
     foreach my $el ( @{$list} ) {
         my ( $rank, $name ) = map { $el->{$_} } qw/rank symbol/;
         my ($unit_price) = $el->{price_usd};
-        my ( $mcap, $total, $_24h_vol )
-	  = map { defined( $el->{$_}) ? large_num( $el->{$_} ) : 'n/a' } qw/market_cap_usd total_supply 24h_volume_usd/;
+        my ( $mcap, $total )
+            = map { defined( $el->{$_} ) ? large_num( $el->{$_} ) : 'n/a' }
+            qw/market_cap_usd total_supply /;
 
-	# some hackery for specific volumes and prices
-	if ( $name eq 'BTC' ) { 
-	    push @volumes, {symbol=>$name, volume=>$_24h_vol};
-	    $btc_price = $unit_price;
-	} elsif ( $name eq 'BCH' ) {
-	    push @volumes, {symbol=>$name, volume=>$_24h_vol};
-	    $bch_price = $unit_price;
-	} elsif ( $name eq 'ETH' ) {
-	    push @volumes, {symbol=>$name, volume=>$_24h_vol};
-	}
+        my $_24h_vol
+            = $el->{'24h_volume_usd'} ? $el->{'24h_volume_usd'} : 'n/a';
+
+        # some hackery for specific volumes and prices
+        if ( $name eq 'BTC' ) {
+            push @volumes, { symbol => $name, volume => $_24h_vol };
+            $btc_price = $unit_price;
+        } elsif ( $name eq 'BCH' ) {
+            push @volumes, { symbol => $name, volume => $_24h_vol };
+            $bch_price = $unit_price;
+        } elsif ( $name eq 'ETH' ) {
+            push @volumes, { symbol => $name, volume => $_24h_vol };
+        }
         my $avail_pct;
         if ( defined $el->{total_supply} ) {
             $avail_pct = $el->{available_supply} / $el->{total_supply} * 100;
@@ -882,13 +889,16 @@ sub mcap_out {
             $avail_pct = 'n/a';
         }
         my $frac_of_top;
-	if ( defined  $el->{market_cap_usd} ) {
-	    $frac_of_top = sprintf("%6.01f%%",$el->{market_cap_usd} / $total_mcap * 100);
-	}else{
-	    $frac_of_top = 'n/a';
-	}
+        if ( defined $el->{market_cap_usd} ) {
+            $frac_of_top = sprintf( "%6.01f%%",
+                                          $el->{market_cap_usd}
+                                        / $total_mcap
+                                        * 100 );
+        } else {
+            $frac_of_top = 'n/a';
+        }
 
-        my @changes     = map {
+        my @changes = map {
             defined $el->{$_}
                 ? (    # need to code defensively if there's no actual data
                 $el->{$_} < 0
@@ -902,15 +912,17 @@ sub mcap_out {
                 $avail_pct, @changes );
         $line_count++;
     }
+
     # some extra data
     print '  24h volumes - ';
-    foreach my $el ( @volumes ) {
-	print $el->{symbol}. ': '.$el->{volume} . ' ';
+    foreach my $item ( sort { $b->{volume} <=> $a->{volume} } @volumes ) {
+        print $item->{symbol} . ': ' . large_num( $item->{volume} ) . ' ';
     }
     print "\n";
     $line_count++;
-    printf("  BCH / BTC = %.04f\n", $bch_price/$btc_price);
+    printf( "  BCH / BTC = %.04f\n", $bch_price / $btc_price );
     $line_count++;
+
     # pad the output to fit the screen
     my $line_diff = 20 - $line_count;
     my $idx       = 0;
