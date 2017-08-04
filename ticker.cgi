@@ -856,7 +856,7 @@ sub mcap_out {
     print RESET. "\n";
     my $line_count = 1;
     my @volumes;
-    my ( $btc_price, $bch_price );
+    my %compare_prices;
 
     foreach my $el ( @{$list} ) {
         my ( $rank, $name ) = map { $el->{$_} } qw/rank symbol/;
@@ -869,14 +869,9 @@ sub mcap_out {
             = $el->{'24h_volume_usd'} ? $el->{'24h_volume_usd'} : 'n/a';
 
         # some hackery for specific volumes and prices
-        if ( $name eq 'BTC' ) {
+        if ( $name eq 'BTC' or $name eq 'BCH' or $name eq 'ETH' ) {
             push @volumes, { symbol => $name, volume => $_24h_vol };
-            $btc_price = $unit_price;
-        } elsif ( $name eq 'BCH' ) {
-            push @volumes, { symbol => $name, volume => $_24h_vol };
-            $bch_price = $unit_price;
-        } elsif ( $name eq 'ETH' ) {
-            push @volumes, { symbol => $name, volume => $_24h_vol };
+            $compare_prices{$name} = $unit_price;
         }
         my $avail_pct;
         if ( defined $el->{total_supply} ) {
@@ -914,14 +909,22 @@ sub mcap_out {
     }
 
     # some extra data
-    print '  24h volumes - ';
+    my $vol_line = '  24h volumes  ';
+    my $prc_line = '  currency/BTC ';
     foreach my $item ( sort { $b->{volume} <=> $a->{volume} } @volumes ) {
-        print $item->{symbol} . ': ' . large_num( $item->{volume} ) . ' ';
+        $vol_line .= sprintf( "%3s %7s ",
+                              $item->{symbol}, large_num( $item->{volume} ) );
+        if ( $item->{symbol} eq 'BTC' ) {
+            $prc_line .= sprintf( "%3s %7s", ' ', ' ' );
+        } else {
+            $prc_line .= sprintf( "%3s %8.04f",
+                  ' ',
+                  $compare_prices{ $item->{symbol} } / $compare_prices{BTC} );
+        }
     }
-    print "\n";
-    $line_count++;
-    printf( "  BCH / BTC = %.04f\n", $bch_price / $btc_price );
-    $line_count++;
+    print $vol_line, "\n";
+    print $prc_line, "\n";
+    $line_count += 2;
 
     # pad the output to fit the screen
     my $line_diff = 20 - $line_count;
