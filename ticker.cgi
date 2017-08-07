@@ -604,13 +604,12 @@ sub html_out {
 
     my $marketcap_table;
     if ( $config->{show_cap_html} ) {
-
-        #	my $metadata = pop @{$D->{marketcap}->{list}};
         push @{$marketcap_table},
             th( [ 'Rank',
                   'Currency (symbol)',
                   'Marketcap USD',
-                  'Unit price',
+                  'USD price',
+		  'BTC price',
                   'Dominance',
                   'Total supply',
                   'Available supply in %',
@@ -656,6 +655,9 @@ sub html_out {
             }
 
             my $unit_price = sprintf( '%.02f', $entry->{price_usd} );
+	    my $btc_price = defined $entry->{price_btc}?
+	      sprintf( '%.05f', $entry->{price_btc} ) : 'n/a';
+
             my $pct_avail;
             if (     defined $entry->{total_supply}
                  and defined $entry->{available_supply} )
@@ -675,10 +677,11 @@ sub html_out {
             } qw/1h 24h 7d/;
 
             push @{$marketcap_table},
-                td( [ $rank,      $currency, $mcap,      $unit_price,
+                td( [ $rank,      $currency, $mcap,      $unit_price, $btc_price,
                       $dominance, $total,    $pct_avail, @changes ] );
         }
     }
+
 
     ### ==================================================
     my $future_table;
@@ -1231,7 +1234,7 @@ my $metadata = pop @{$marketcap_data};
 foreach my $entry ( @{$marketcap_data} ) {
     push @{$marketcap_table},
         { map { $_ => $entry->{$_} }
-        qw/rank name symbol market_cap_usd total_supply percent_change_7d percent_change_1h percent_change_24h available_supply price_usd 24h_volume_usd/
+        qw/rank name symbol market_cap_usd total_supply percent_change_7d percent_change_1h percent_change_24h available_supply price_usd 24h_volume_usd price_btc/
         };
 }
 $Data->{marketcap}->{fetched} = $marketcap_ref->[0];
