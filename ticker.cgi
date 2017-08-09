@@ -912,18 +912,15 @@ sub mcap_out {
     }
 
     # some extra data
-    my $vol_line = '  24h volumes  ';
-    my $prc_line = '  currency/BTC ';
+    my $vol_line = '   24h volumes: ';
+    my $prc_line = '  currency/BTC: ';
     foreach my $item ( sort { $b->{volume} <=> $a->{volume} } @volumes ) {
-        $vol_line .= sprintf( "%3s %7s ",
+        $vol_line .= sprintf( "%4s %8s  ",
                               $item->{symbol}, large_num( $item->{volume} ) );
-        if ( $item->{symbol} eq 'BTC' ) {
-            $prc_line .= sprintf( "%3s %7s", ' ', ' ' );
-        } else {
-            $prc_line .= sprintf( "%3s %8.04f",
-                  ' ',
+	$prc_line .= sprintf( "%4s %8.02e  ",
+                  '-"-',
                   $compare_prices{ $item->{symbol} } / $compare_prices{BTC} );
-        }
+
     }
     print $vol_line, "\n";
     print $prc_line, "\n";
