@@ -656,7 +656,7 @@ sub html_out {
 
             my $unit_price = sprintf( '%.02f', $entry->{price_usd} );
 	    my $btc_price = defined $entry->{price_btc}?
-	      sprintf( '%.05f', $entry->{price_btc} ) : 'n/a';
+	      sprintf( '%.03E', $entry->{price_btc} ) : 'n/a';
 
             my $pct_avail;
             if (     defined $entry->{total_supply}
@@ -873,7 +873,7 @@ sub mcap_out {
 
         # some hackery for specific volumes and prices
         if ( $name eq 'BTC' or $name eq 'BCH' or $name eq 'ETH' ) {
-            push @volumes, { symbol => $name, volume => $_24h_vol };
+            push @volumes, { symbol => $name, rank=>$rank, volume => $_24h_vol };
             $compare_prices{$name} = $unit_price;
         }
         my $avail_pct;
@@ -915,10 +915,10 @@ sub mcap_out {
     my $vol_line = '   24h volumes: ';
     my $prc_line = '  currency/BTC: ';
     foreach my $item ( sort { $b->{volume} <=> $a->{volume} } @volumes ) {
-        $vol_line .= sprintf( "%4s %8s  ",
-                              $item->{symbol}, large_num( $item->{volume} ) );
-	$prc_line .= sprintf( "%4s %8.02e  ",
-                  '-"-',
+        $vol_line .= sprintf( " %4s %8s |",
+                              $item->{symbol}.' ('.$item->{rank}.')', large_num( $item->{volume} ) );
+	$prc_line .= sprintf( " %4s %8.02e |",
+                  '---"---',
                   $compare_prices{ $item->{symbol} } / $compare_prices{BTC} );
 
     }
@@ -934,7 +934,7 @@ sub mcap_out {
         $idx++;
     }
 
-    print "  Fetched: $fetched\n";
+    print "       Fetched: $fetched\n";
 }    # mcap_out
 #### MAIN ################################################################
 
