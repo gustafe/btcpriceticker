@@ -746,7 +746,7 @@ sub html_out {
 
     print p( sprintf( "Updated on %s (%s ago).",
                       epoch_to_parts( $array->[0]->[2] )->{std},
-                      eta_time( $array->[0]->[3] ) ) );
+                      eta_time( $array->[0]->[3] ) ), ' Data from ', a({href=>"https://bitcoinaverage.com/"}, "Bitcoinaverage"),'.');
 
     print h2("At a glance");
 
