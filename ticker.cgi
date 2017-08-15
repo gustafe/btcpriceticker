@@ -609,7 +609,7 @@ sub html_out {
                   'Currency (symbol)',
                   'Marketcap USD',
                   'USD price',
-		  'BTC price',
+                  'BTC price',
                   'Dominance',
                   'Total supply',
                   'Available supply in %',
@@ -655,8 +655,10 @@ sub html_out {
             }
 
             my $unit_price = sprintf( '%.02f', $entry->{price_usd} );
-	    my $btc_price = defined $entry->{price_btc}?
-	      sprintf( '%.03E', $entry->{price_btc} ) : 'n/a';
+            my $btc_price
+                = defined $entry->{price_btc}
+                ? sprintf( '%.03E', $entry->{price_btc} )
+                : 'n/a';
 
             my $pct_avail;
             if (     defined $entry->{total_supply}
@@ -677,11 +679,11 @@ sub html_out {
             } qw/1h 24h 7d/;
 
             push @{$marketcap_table},
-                td( [ $rank,      $currency, $mcap,      $unit_price, $btc_price,
-                      $dominance, $total,    $pct_avail, @changes ] );
+                td( [ $rank,       $currency,  $mcap,
+                      $unit_price, $btc_price, $dominance,
+                      $total,      $pct_avail, @changes ] );
         }
     }
-
 
     ### ==================================================
     my $future_table;
@@ -746,7 +748,10 @@ sub html_out {
 
     print p( sprintf( "Updated on %s (%s ago).",
                       epoch_to_parts( $array->[0]->[2] )->{std},
-                      eta_time( $array->[0]->[3] ) ), ' Data from ', a({href=>"https://bitcoinaverage.com/"}, "Bitcoinaverage"),'.');
+                      eta_time( $array->[0]->[3] ) ),
+             ' Data from ',
+             a( { href => "https://bitcoinaverage.com/" }, "Bitcoinaverage" ),
+             '.' );
 
     print h2("At a glance");
 
@@ -873,7 +878,8 @@ sub mcap_out {
 
         # some hackery for specific volumes and prices
         if ( $name eq 'BTC' or $name eq 'BCH' or $name eq 'ETH' ) {
-            push @volumes, { symbol => $name, rank=>$rank, volume => $_24h_vol };
+            push @volumes,
+                { symbol => $name, rank => $rank, volume => $_24h_vol };
             $compare_prices{$name} = $unit_price;
         }
         my $avail_pct;
@@ -916,8 +922,9 @@ sub mcap_out {
     my $prc_line = '  currency/BTC: ';
     foreach my $item ( sort { $b->{volume} <=> $a->{volume} } @volumes ) {
         $vol_line .= sprintf( " %4s %8s |",
-                              $item->{symbol}.' ('.$item->{rank}.')', large_num( $item->{volume} ) );
-	$prc_line .= sprintf( " %4s %8.02e |",
+                              $item->{symbol} . ' (' . $item->{rank} . ')',
+                              large_num( $item->{volume} ) );
+        $prc_line .= sprintf( " %4s %8.02e |",
                   '---"---',
                   $compare_prices{ $item->{symbol} } / $compare_prices{BTC} );
 
