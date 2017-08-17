@@ -9,10 +9,8 @@ use BTCtracker qw/get_dbh get_ua/;
 my $debug                  = 0;
 my $no_of_coins_to_display = 15;
 
-#my $url   = 'https://api.coinmarketcap.com/v1/ticker/?limit=10';
 my $url = 'https://api.coinmarketcap.com/v1/ticker/';
 
-#my $url   = 'https://api.coinmarketcap.com/v1/ticker/';
 my $sql = "insert into coinmarketcap (timestamp, data)
 values (datetime(?,'unixepoch'),?)";
 my $ua = get_ua();
@@ -37,19 +35,17 @@ if ( !$response->is_success ) {
                      percent_change_1h  => 0,
                      percent_change_24h => 0,
                      percent_change_7d  => 0,
-                     price_usd          => 0 );
+                     price_usd          => 0,
+                     price_btc          => 0 );
     my $others_ref = { name => 'Others', symbol => 'others', id => 'others' };
 
     for my $el ( @{$info} ) {
-        if (    $el_count <= $no_of_coins_to_display
-        #     or $el->{symbol} eq 'TIT'
-		or $el->{symbol} eq 'USDT'
-		or $el->{symbol} eq 'BCH'
-	   )
+        if ($el_count <= $no_of_coins_to_display
+            or $el->{symbol} eq 'BCH' )
         {
             push @{$out}, $el;
             push @times, $el->{last_updated};
-            $sum_top += $el->{market_cap_usd}?$el->{market_cap_usd}:0;
+            $sum_top += $el->{market_cap_usd} ? $el->{market_cap_usd} : 0;
         } else {
 
             $total_count++;
