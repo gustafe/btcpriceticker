@@ -1015,8 +1015,15 @@ $fixed{1}   = { label => '24 hours ago', short => '24h' };
 $fixed{30}  = { label => '1 month ago',  short => '1mo' };
 $fixed{365} = { label => '1 year ago',   short => '1yr' };
 $fixed{3}   = { label => '3 days ago',   short => '3dy' };
-$fixed{730} = { label => '2 years ago',  short => '2yr' };
+#$fixed{730} = { label => '2 years ago',  short => '2yr' };
 $fixed{7}   = { label => '1 week ago',   short => '1wk' };
+#$fixed{1095}= { label => '3 years ago', short=>'3yr' };
+
+for my $yr (2,3,4) {
+    $fixed{$yr*365} = { label => "$yr years ago", short=> $yr.'yr' };
+}
+
+		      
 
 my $labels = { ath   => { label => 'Record high ("ATH")' },
                ytd   => { label => "Year to date" },
@@ -1142,7 +1149,7 @@ my ( $k_e, $m_e, $k_l, $m_l )
 my $exp_price = sub { my ($d) = @_; return exp($m_e) * exp( $k_e * $d ); };
 my $lin_price = sub { my ($d) = @_; return $k_l * $d + $m_l; };
 
-foreach my $tag ( sort keys %{$history} ) {
+foreach my $tag ( sort by_number keys %{$history} ) {
     push @{$date_list}, $tag;
     next if $tag !~ m/^\d+/;
     my $price;
@@ -1206,9 +1213,8 @@ my %price_targets = (
     million       => { p => 1_000_000, label => 'MOON' },
     twice_current => { p => 2 * $last, label => "Twice current price" },
     spartans_hodl => { p => 300,       label => "Spartans HODL!!!" },
-    sixtynine => { p => 69, label => "Sixty-Nine, \@Hubbabubba's fav" },
-
-#	      mining_limit => { p=>200, label=>"Theoretical limit of mining profitability"},
+		     sixtynine => { p => 69, label => "Sixty-Nine, \@Hubbabubba's fav" },
+bitfinex_1B=>{p=>1_000_000_000/119_756, label=>"Stolen Bitfinex coins worth \$1.00B"},		     
 );
 
 $Data->{future_prices}->{metadata} = { K => $K, M => $M };
