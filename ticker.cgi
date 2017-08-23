@@ -879,7 +879,7 @@ sub mcap_out {
         # some hackery for specific volumes and prices
         if ( $name eq 'BTC' or $name eq 'BCH' or $name eq 'ETH' ) {
             push @volumes,
-                { symbol => $name, rank => $rank, volume => $_24h_vol };
+                { symbol => $name, rank => $rank, volume => $_24h_vol, unitvol=>$_24h_vol/$unit_price };
             $compare_prices{$name} = $unit_price;
         }
         my $avail_pct;
@@ -918,20 +918,24 @@ sub mcap_out {
     }
 
     # some extra data
-    my $vol_line = '   24h volumes: ';
+    my $vol_line = '   24h USD vol: ';
+    my $unit_vol_line = '  24h unit vol: ';
     my $prc_line = '  currency/BTC: ';
     foreach my $item ( sort { $b->{volume} <=> $a->{volume} } @volumes ) {
         $vol_line .= sprintf( " %4s %8s |",
                               $item->{symbol} . ' (' . $item->{rank} . ')',
                               large_num( $item->{volume} ) );
+	$unit_vol_line.=sprintf(" %4s %8s |",
+				'---"---',large_num($item->{unitvol} ));
         $prc_line .= sprintf( " %4s %8.02e |",
                   '---"---',
                   $compare_prices{ $item->{symbol} } / $compare_prices{BTC} );
 
     }
     print $vol_line, "\n";
+    print $unit_vol_line,"\n";
     print $prc_line, "\n";
-    $line_count += 2;
+    $line_count += 3;
 
     # pad the output to fit the screen
     my $line_diff = 20 - $line_count;
