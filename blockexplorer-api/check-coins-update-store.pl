@@ -57,7 +57,7 @@ my $ua = get_ua();
 sub web_data {
     my ( $api_string, $param ) = @_;
 
-    #    warn "==> $base_url/$api_string\n";
+    warn "==> $base_url/$api_string\n";
 
     my $res = $ua->get("$base_url/$api_string");
     my $json;
@@ -69,7 +69,6 @@ sub web_data {
         $json = $res->decoded_content;
     }
 
-    #    return undef unless defined $json;
     my $info = decode_json($json);
     return $info->{$param};
 }
