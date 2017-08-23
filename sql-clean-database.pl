@@ -30,8 +30,8 @@ push @statements, [
 where timestamp < datetime('now', '-7 day')/ ];
 
 push @statements,
-    ['Clean coinmarketcap data older than 7 days',
-     qq/delete from coinmarketcap where timestamp < datetime('now', '-7 day')/
+    ['Clean coinmarketcap data older than 90 days',
+     qq/delete from coinmarketcap where timestamp < datetime('now', '-90 day')/
     ];
 
 foreach my $sql (@statements) {
