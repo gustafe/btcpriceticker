@@ -687,7 +687,7 @@ sub html_out {
 
     ### ==================================================
     my $future_table;
-    my $K = $D->{future_prices}->{metadata}->{K};
+    my $K = $D->{scaffolding}->{coefficients}->{slope_30d};
     push @{$future_table}, th( [ 'Event', 'Price', 'ETA' ] );
     foreach my $line ( @{ $D->{future_prices}->{table} } ) {
         push @{$future_table}, td($line);
@@ -1017,6 +1017,7 @@ my %fixed;
 $fixed{180} = { label => '6 months ago', short => '6mo' };
 $fixed{1}   = { label => '24 hours ago', short => '24h' };
 $fixed{30}  = { label => '1 month ago',  short => '1mo' };
+$fixed{90} ={label=>'3 months ago', short=>'3mo'};
 $fixed{365} = { label => '1 year ago',   short => '1yr' };
 $fixed{3}   = { label => '3 days ago',   short => '3dy' };
 #$fixed{730} = { label => '2 years ago',  short => '2yr' };
@@ -1221,7 +1222,7 @@ my %price_targets = (
 bitfinex_1B=>{p=>1_000_000_000/119_756, label=>"Stolen Bitfinex coins worth \$1.00B"},		     
 );
 
-$Data->{future_prices}->{metadata} = { K => $K, M => $M };
+#$Data->{future_prices}->{metadata} = { K => $K, M => $M };
 foreach my $tag ( sort { $price_targets{$b}->{p} <=> $price_targets{$a}->{p} }
                   keys %price_targets )
 {
