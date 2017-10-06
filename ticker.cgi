@@ -843,6 +843,7 @@ sub oneline_out {
     my @array;
     foreach my $l ( @{ $D->{history} } ) {
         my ( $pct, $short ) = @{$l}[ 4, 7 ];
+	next if ( $short eq '3mo' or $short eq '3yr' or $short eq '4yr' );
         push @array, sprintf( "%s %+.01f%%;", $short, $pct );
     }
     $line .= join( ' ', @array );
