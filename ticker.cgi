@@ -2,7 +2,6 @@
 use strict;
 use warnings;
 
-use lib ("/home/gustaf/prj/BTCTicker/"); # , "/home/gustaf/perl5/lib/perl5/");
 use DBI;
 use CGI qw(:standard start_ul *table);
 use CGI::Carp qw(fatalsToBrowser);
