@@ -15,7 +15,7 @@ $VERSION = 1.00;
 @EXPORT_OK = qw/get_dbh get_ua/;
 %EXPORT_TAGS = (DEFAULT => [qw/&signature/]);
 
-my $cfg = Config::Simple->new('/home/gustaf/prj/BTCPriceTicker/btcaverage_apiv2/btctracker.ini');
+my $cfg = Config::Simple->new('/home/gustaf/BTCPriceTicker/btcaverage_apiv2/btctracker.ini');
 
 #### BTCAverage access sig
 
