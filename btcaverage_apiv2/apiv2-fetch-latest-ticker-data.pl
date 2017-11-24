@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use JSON;
 use BTCtracker qw/get_dbh get_ua/;
-
+my $debug=0;
 my $url = 'https://apiv2.bitcoinaverage.com/indices/global/ticker/BTCUSD';
 
 my $sql = qq{insert into ticker (
@@ -30,7 +30,11 @@ if ( !$response->is_success ) {
 
 } else {
     my $info = decode_json( $response->decoded_content );
-
+    if ($debug) {
+	open F, ">/tmp/ticker.json" or warn "cannot open temp file";
+	print F $response->decoded_content;
+	close F;
+    }
     my @bind_params;
     my @times = qw/hour day week month month_3 month_6 year/;
 
