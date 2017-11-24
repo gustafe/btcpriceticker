@@ -27,7 +27,11 @@ my $dbh = DBI->connect( $dsn, $user, $pass, { RaiseError => 1 } )
 my %Sql;
 
 $Sql{'latest_price'}
-    = qq/select strftime('%s', timestamp), last, high, low, volume from ticker order by timestamp desc limit 10/;
+    = qq/select strftime('%s', timestamp), last, high, low, volume, 
+open_hour, change_pct_hour, change_price_hour,
+open_day, change_pct_day, change_price_day,
+open_week, change_pct_week, change_price_week
+from ticker order by timestamp desc limit 10/;
 
 $Sql{'days_ago'} = qq/select 
 timestamp, high, low, average, volume 
@@ -427,22 +431,13 @@ sub console_out {
                  epoch_to_parts( $d->[2] )->{std},
                  eta_time( $d->[3] ) );
 
-    my $last_prices = $D->{"price_history_last_hours"};
-    my $current = shift @{$last_prices};    # get rid of current data;
-    my $diffs;
-    foreach my $item ( reverse @{$last_prices} ) {
-        my $diff = sprintf( '%.02f', $item->[2] );
-        if ( $diff < 0 ) {
-            $diff = RED . $diff . RESET;
-        } else {
-            $diff = GREEN . $diff . RESET;
-        }
-
-        $diffs .= sprintf( "%15s ", $diff );
-    }
-
-    push @out, '   ' . $diffs;
-
+    # foreach my $period ( 'hour', 'week' ) {
+    #     my $hash = $D->{changes}->{$period};
+    #     push @out,
+    #       sprintf( "%8s %7.02f (%+8.02f) [%7.01f%%]",
+    #         $period, $hash->{open}, $hash->{change_price},
+    #         $hash->{change_pct} );
+    # }
     $d = shift @{$layout};
     push @out,
         sprintf( "%8s %7.02f (%+8.02f) | %8s %7.02f (%+8.02f) | %8s %7s",
@@ -972,6 +967,15 @@ for my $r ( @{$result} ) {
 
 my $ntl_diff = $_10min[1]->[2];
 $Data->{"price_history_last_hours"} = \@_10min;
+$Data->{changes}->{hour} = { open => $latest->[5],
+			      change_pct=>$latest->[6],
+			     change_price =>$latest->[7]}  ;
+$Data->{changes}->{day} = { open => $latest->[8],
+			   change_pct=>$latest->[9],
+			   change_price => $latest->[10] };
+$Data->{changes}->{week} ={ open => $latest->[11],
+			   change_pct=>$latest->[12],
+			   change_price => $latest->[13] };
 $sth->finish();
 my $now = time();
 
@@ -1140,6 +1144,8 @@ $Data->{layout} = [    # last, update, date, ago
        $_30d_max - $_30d_min,
        ( $_30d_max - $_30d_min ) / $last * 100,
        $coins_now ], ];
+
+
 
 # common format for historical data
 
