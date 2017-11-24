@@ -1,5 +1,5 @@
 HOME=/home/gustaf
-BIN=$(HOME)/prj/BTCPriceTicker
+BIN=$(HOME)/BTCPriceTicker
 #BUILD=$(HOME)/prj/RegNr/build
 CGI=$(HOME)/cgi-bin
 
