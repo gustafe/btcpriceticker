@@ -417,13 +417,13 @@ sub console_out {
     my @out;
 
     my $layout = $D->{layout};
-
+    push @out, '';
     my $d = shift @{$layout};
 
     my $diff = sprintf( '%+.02f', $d->[1] );
     if   ( $diff < 0 ) { $diff = RED . $diff . RESET }
     else               { $diff = GREEN . $diff . RESET }
-
+    
     push @out,
         sprintf( "   Last: %s [%17s] | %34s (%s)",
                  BLUE . $last . RESET,
@@ -440,17 +440,17 @@ sub console_out {
     # }
     $d = shift @{$layout};
     push @out,
-        sprintf( "%8s %7.02f (%+8.02f) | %8s %7.02f (%+8.02f) | %8s %7s",
+        sprintf( "%8s %8.02f (%+8.02f) | %8s %8.02f (%+8.02f) | %8s %7s",
                  '24h max', $d->[0], $d->[1], '30d max', $d->[2], $d->[3],
                  '24h vol', large_num( $d->[-1] ) );
     $d = shift @{$layout};
     push @out,
-        sprintf( "%8s %7.02f (%+8.02f) | %8s %7.02f (%+8.02f) | %8s %7s",
+        sprintf( "%8s %8.02f (%+8.02f) | %8s %8.02f (%+8.02f) | %8s %7s",
                  'min', $d->[0], $d->[1], 'min', $d->[2], $d->[3],
                  'Mcap', large_num( $d->[-1] ) );
     $d = shift @{$layout};
     push @out,
-        sprintf( "%8s %7.02f [%7.01f%%] | %8s %7.02f [%7.01f%%] | %8s %7s",
+        sprintf( "%8s %8.02f [%7.01f%%] | %8s %8.02f [%7.01f%%] | %8s %7s",
                  'spread', $d->[0], $d->[1], 'spread', $d->[2], $d->[3],
                  'Coins', large_num( $d->[-1] ) );
 
