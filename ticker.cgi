@@ -425,7 +425,7 @@ sub console_out {
     else               { $diff = GREEN . $diff . RESET }
     
     push @out,
-        sprintf( "   Last: %s [%17s] | %34s (%s)",
+        sprintf( "   Last:  %s [%17s] | %34s (%s)",
                  BLUE . $last . RESET,
                  $diff,
                  epoch_to_parts( $d->[2] )->{std},
@@ -722,7 +722,11 @@ sub html_out {
            content => [
 "On 2 Aug 2016, the exchange Bitfinex announced they had suffered a security breach and that 119,756 BTC were stolen.",
                sprintf( "Current value of the stolen coins is USD&nbsp;%s.",
-                        nformat( 119_756 * $last ) ) ], }, );
+                        nformat( 119_756 * $last ) ) ], },
+		       { header => "Price of a Leica Noctilux-M 75mm f/1.25 ASPH lens",
+			 content=> ["The price of this lens was \$12,795 at announcement. The price of this lens in BTC is ".sprintf("%.05f BTC.", 12795/$last)]},
+
+		      );
 
     ### Output ########################################
 
