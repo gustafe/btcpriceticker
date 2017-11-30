@@ -906,7 +906,7 @@ sub mcap_out {
                 : YELLOW . 'n/a'
                 . RESET
         } qw/percent_change_1h percent_change_24h percent_change_7d/;
-        printf( "%4d %7s %8s %7.02f %7s %8s %6s%%  %16s %16s %16s\n",
+        printf( "%4d %7s %8s %8.02f %7s %8s %6s%%  %16s %16s %16s\n",
                 $rank, $name, $mcap, $unit_price, $frac_of_top, $total,
                 $avail_pct, @changes );
         $line_count++;
