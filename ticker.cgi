@@ -21,13 +21,13 @@ my $dsn      = "DBI:$driver:dbname=$database";
 my ( $user, $pass ) = ( '', '' );
 
 my $dbh = DBI->connect( $dsn, $user, $pass, { RaiseError => 1 } )
-    or die $DBI::errstr;
+  or die $DBI::errstr;
 
 ### keep the SQLs separate ########################################
 my %Sql;
 
-$Sql{'latest_price'}
-    = qq/select strftime('%s', timestamp), last, high, low, volume, 
+$Sql{'latest_price'} =
+  qq/select strftime('%s', timestamp), last, high, low, volume, 
 open_hour, change_pct_hour, change_price_hour,
 open_day, change_pct_day, change_price_day,
 open_week, change_pct_week, change_price_week
@@ -97,22 +97,21 @@ from ranges
 where ? between average_1 and average_2
 order by timestamp_1  limit 1/;
 
-$Sql{'coeffs'}
-    = qq/select * from coefficients order by timestamp desc limit 1/;
+$Sql{'coeffs'} = qq/select * from coefficients order by timestamp desc limit 1/;
 
-$Sql{'first_date'}
-    = qq/select julianday(timestamp) from history order by timestamp limit 1/;
+$Sql{'first_date'} =
+  qq/select julianday(timestamp) from history order by timestamp limit 1/;
 
-$Sql{'daily_min_max'}
-    = qq/select min(p.last), max(p.last) from ticker p where p.timestamp > datetime('now','-1 day')/;
-$Sql{'monthly_min_max'}
-    = qq/select min(h.low), max(h.high) from history h where h.timestamp > datetime('now', '-30 day')/;
+$Sql{'daily_min_max'} =
+qq/select min(p.last), max(p.last) from ticker p where p.timestamp > datetime('now','-1 day')/;
+$Sql{'monthly_min_max'} =
+qq/select min(h.low), max(h.high) from history h where h.timestamp > datetime('now', '-30 day')/;
 
-$Sql{'historical_coins'}
-    = qq/select julianday(timestamp) as ts, block, no_of_coins as coins from blocks/;
+$Sql{'historical_coins'} =
+qq/select julianday(timestamp) as ts, block, no_of_coins as coins from blocks/;
 
-$Sql{'marketcap'}
-    = qq/select timestamp, data from coinmarketcap order by timestamp desc limit 1/;
+$Sql{'marketcap'} =
+  qq/select timestamp, data from coinmarketcap order by timestamp desc limit 1/;
 
 ### Other vars ########################################
 
@@ -126,13 +125,12 @@ sub large_num {    # return numbers in K, M, B based on size
     $x = -$x if $negative;
     return $negative ? -$x : $x if $x < 1_000;
     return sprintf( "%.02fk", $negative ? -$x / 1_000 : $x / 1_000 )
-        if ( $x >= 1_000 and $x < 1_000_000 );
+      if ( $x >= 1_000 and $x < 1_000_000 );
     return sprintf( "%.02fM", $negative ? -$x / 1_000_000 : $x / 1_000_000 )
-        if ( $x >= 1_000_000 and $x < 1_000_000_000 );
+      if ( $x >= 1_000_000 and $x < 1_000_000_000 );
     return
-        sprintf( "%.02fB",
-                 $negative ? -$x / 1_000_000_000 : $x / 1_000_000_000 )
-        if ( $x >= 1_000_000_000 );
+      sprintf( "%.02fB", $negative ? -$x / 1_000_000_000 : $x / 1_000_000_000 )
+      if ( $x >= 1_000_000_000 );
 }
 
 my @months = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
@@ -154,19 +152,23 @@ sub epoch_to_parts {
     my $out;
 
     #  0    1    2     3     4    5     6     7     8
-    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst )
-        = gmtime($e);
-    if ( $e > ( 1436044942 + 500 * 365 * 24 * 3600 ) ) {   # far in the future
+    my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) =
+      gmtime($e);
+    if ( $e > ( 1436044942 + 500 * 365 * 24 * 3600 ) ) {    # far in the future
         $out->{out} = sprintf( "In the year %d", $year + 1900 );
-    } else {
-        $out->{std} = sprintf( "%s %02d %s %04d %02d:%02d:%02d",
-                               $wdays[$wday], $mday, $months[$mon],
-                               $year + 1900,
-                               $hour, $min, $sec );
     }
-    $out->{iso} = sprintf( "%04d-%02d-%02d %02d:%02d:%02d",
-                           $year + 1900,
-                           $mon + 1, $mday, $hour, $min, $sec );
+    else {
+        $out->{std} = sprintf(
+            "%s %02d %s %04d %02d:%02d:%02d",
+            $wdays[$wday], $mday, $months[$mon], $year + 1900,
+            $hour, $min, $sec
+        );
+    }
+    $out->{iso} = sprintf(
+        "%04d-%02d-%02d %02d:%02d:%02d",
+        $year + 1900,
+        $mon + 1, $mday, $hour, $min, $sec
+    );
     $out->{ymd} = sprintf( "%04d-%02d-%02d", $year + 1900, $mon + 1, $mday );
     $out->{hms} = sprintf( "%02d:%02d:%02d", $hour,        $min,     $sec );
     return $out;
@@ -185,20 +187,27 @@ sub datetime_to_parts {
     # ep (4): epoch seconds
 
     my ($ts) = @_;
-    if ( $ts =~ m/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/ ) {
-        my ( $yyyy, $mm, $dd, $hh, $mi, $ss ) = ( $1, $2, $3, $4, $5, $6 );
-        my $dt = DateTime->new( year   => $yyyy,
-                                month  => $mm,
-                                day    => $dd,
-                                hour   => $hh,
-                                minute => $mi,
-                                second => $ss );
-        return {ymd => sprintf( "%04d-%02d-%02d", $1, $2,                $3 ),
-                hms => sprintf( "%02d:%02d:%02d", $4, $5,                $6 ),
-                str => sprintf( "%d %s %04d",     $3, $months[ $2 - 1 ], $1 ),
-                jd  => $dt->jd(),
-                ep  => $dt->epoch() };
-    } else {
+    if ( $ts =~
+m/(?<Y>\d{4})-(?<M>\d{2})-(?<D>\d{2}) (?<h>\d{2}):(?<m>\d{2}):(?<s>\d{2})/
+      )
+    {
+        my $dt = DateTime->new(
+            year   => $+{Y},
+            month  => $+{M},
+            day    => $+{D},
+            hour   => $+{h},
+            minute => $+{m},
+            second => $+{s}
+        );
+        return {
+            ymd => sprintf( "%04d-%02d-%02d", $+{Y}, $+{M}, $+{D} ),
+            hms => sprintf( "%02d:%02d:%02d", $+{h}, $+{m}, $+{s} ),
+            str => sprintf( "%d %s %04d", $+{D}, $months[ $+{M} - 1 ], $+{Y} ),
+            jd  => $dt->jd(),
+            ep  => $dt->epoch()
+        };
+    }
+    else {
         warn "--> $ts is not correctly formatted date string\n";
         return [];
     }
@@ -219,7 +228,8 @@ sub julian_to_epoch {
     # Julian dates change at noon, convert so it's at midnight instead
     if ( $frac < 0.5 ) {
         $frac = $frac + 0.5;
-    } else {
+    }
+    else {
         $D++;
         $frac = $frac - 0.5;
     }
@@ -258,16 +268,19 @@ sub eta_time {
     # ouput: duration in days, hours, minutes and seconds
 
     my ($ep) = @_;
-    my ( $dd, $hh, $mm, $ss )
-        = ( int( $ep / ( 24 * 60 * 60 ) ),
-            ( $ep / ( 60 * 60 ) ) % 24,
-            ( $ep / 60 ) % 60,
-            $ep % 60 );
+    my ( $dd, $hh, $mm, $ss ) = (
+        int( $ep / ( 24 * 60 * 60 ) ),
+        ( $ep / ( 60 * 60 ) ) % 24,
+        ( $ep / 60 ) % 60,
+        $ep % 60
+    );
     if ( $dd > 0 ) {
         return sprintf( "%3dd %02dh %02dm %02ds", $dd, $hh, $mm, $ss );
-    } elsif ( $hh > 0 ) {
+    }
+    elsif ( $hh > 0 ) {
         return sprintf( "%02dh %02dm %02ds", $hh, $mm, $ss );
-    } else {
+    }
+    else {
         return sprintf( "%02dm%02ds", $mm, $ss );
     }
 
@@ -319,9 +332,10 @@ sub hum_duration {
     return $long_years if ( defined $long_years );
     my $n = @$out;
     return $out->[0] if $n == 1;
-    return
-        join( ' and ' => join( ', ' => @$out[ 0 .. ( $n - 2 ) ] ),
-              $out->[-1], );
+    return join(
+        ' and ' => join( ', ' => @$out[ 0 .. ( $n - 2 ) ] ),
+        $out->[-1],
+    );
 }
 
 sub color_num {
@@ -337,7 +351,8 @@ sub color_num {
         $x = $f->format_number( $x, $dec, 2 );    # if $x < -1_000;
         $x = "$x%" if $is_pct;
         return "<span class='negative'>$x</span>";
-    } else {
+    }
+    else {
         $x = $f->format_number( $x, $dec, 2 );    #if $x > 1_000;
         $x = "$x%" if $is_pct;
         return return "<span class='positive'>$x</span>";
@@ -423,13 +438,15 @@ sub console_out {
     my $diff = sprintf( '%+.02f', $d->[1] );
     if   ( $diff < 0 ) { $diff = RED . $diff . RESET }
     else               { $diff = GREEN . $diff . RESET }
-    
+
     push @out,
-        sprintf( "   Last:  %s [%17s] | %34s (%s)",
-                 BLUE . $last . RESET,
-                 $diff,
-                 epoch_to_parts( $d->[2] )->{std},
-                 eta_time( $d->[3] ) );
+      sprintf(
+        "   Last:  %s [%17s] | %34s (%s)",
+        BLUE . $last . RESET,
+        $diff,
+        epoch_to_parts( $d->[2] )->{std},
+        eta_time( $d->[3] )
+      );
 
     # foreach my $period ( 'hour', 'week' ) {
     #     my $hash = $D->{changes}->{$period};
@@ -440,38 +457,41 @@ sub console_out {
     # }
     $d = shift @{$layout};
     push @out,
-        sprintf( "%8s %8.02f (%+8.02f) | %8s %8.02f (%+8.02f) | %8s %7s",
-                 '24h max', $d->[0], $d->[1], '30d max', $d->[2], $d->[3],
-                 '24h vol', large_num( $d->[-1] ) );
+      sprintf( "%8s %8.02f (%+8.02f) | %8s %8.02f (%+8.02f) | %8s %7s",
+        '24h max', $d->[0], $d->[1], '30d max', $d->[2], $d->[3],
+        '24h vol', large_num( $d->[-1] ) );
     $d = shift @{$layout};
     push @out,
-        sprintf( "%8s %8.02f (%+8.02f) | %8s %8.02f (%+8.02f) | %8s %7s",
-                 'min', $d->[0], $d->[1], 'min', $d->[2], $d->[3],
-                 'Mcap', large_num( $d->[-1] ) );
+      sprintf( "%8s %8.02f (%+8.02f) | %8s %8.02f (%+8.02f) | %8s %7s",
+        'min', $d->[0], $d->[1], 'min', $d->[2], $d->[3],
+        'Mcap', large_num( $d->[-1] ) );
     $d = shift @{$layout};
     push @out,
-        sprintf( "%8s %8.02f [%7.01f%%] | %8s %8.02f [%7.01f%%] | %8s %7s",
-                 'spread', $d->[0], $d->[1], 'spread', $d->[2], $d->[3],
-                 'Coins', large_num( $d->[-1] ) );
+      sprintf( "%8s %8.02f [%7.01f%%] | %8s %8.02f [%7.01f%%] | %8s %7s",
+        'spread', $d->[0], $d->[1], 'spread', $d->[2], $d->[3],
+        'Coins', large_num( $d->[-1] ) );
 
     #print "\n";
     foreach my $line ( @{ $D->{history} } ) {
-        my ( $label, $date, $price, $diff, $pct, $vol, $mcap, $short )
-            = @{$line}[ 0 .. 7 ];
+        my ( $label, $date, $price, $diff, $pct, $vol, $mcap, $short ) =
+          @{$line}[ 0 .. 7 ];
 
         $vol  = large_num($vol);
         $mcap = large_num($mcap);
         if ( $diff < 0 and $pct < 0 ) {
             $diff = RED . sprintf( "%+.02f",   $diff ) . RESET;
             $pct  = RED . sprintf( "%+.01f%%", $pct ) . RESET;
-        } else {
+        }
+        else {
             $diff = GREEN . sprintf( "%+.02f",   $diff ) . RESET;
             $pct  = GREEN . sprintf( "%+.01f%%", $pct ) . RESET;
         }
         push @out,
-            sprintf( "%19s %10s %8.02f %18s %17s %8s %8s",
-                     $label, '[' . $date . ']',
-                     $price, $diff, $pct, $vol, $mcap );
+          sprintf(
+            "%19s %10s %8.02f %18s %17s %8s %8s",
+            $label, '[' . $date . ']',
+            $price, $diff, $pct, $vol, $mcap
+          );
     }
 
     # pad the output to fit a screen
@@ -517,7 +537,7 @@ sub html_out {
         push @{ $t_latest_rows->[0] }, epoch_to_parts( $item->[0] )->{hms};
         push @{ $t_latest_rows->[1] }, sprintf( '%.02f', $item->[1] );
         push @{ $t_latest_rows->[2] },
-            color_num( sprintf( "%.02f", $item->[2] ) );
+          color_num( sprintf( "%.02f", $item->[2] ) );
     }
     my $latest_table;
 
@@ -531,67 +551,107 @@ sub html_out {
     my ( $_30dmax, $_30dmin ) = map { $array->[$_]->[2] } qw/1 2/;
 
     push @t1_rows,
-        Tr( ( th( [ '24h price range',
+      Tr(
+        (
+            th(
+                [
+                    '24h price range',
                     'Diff',
                     '30d price range',
                     'Diff',
-                    'Aggregate figures' ] ) ) );
+                    'Aggregate figures'
+                ]
+            )
+        )
+      );
     push @t1_rows,
-        Tr( td( [ 'Max: ' . nformat($_24hmax),
-                  sprintf( '%+.02f', $array->[1]->[1] ),
-                  'Max: ' . nformat($_30dmax),
-                  sprintf( '%+.02f', $array->[1]->[3] ),
-                  '24h volume: ' . large_num( $array->[1]->[-1] ) ] ) );
+      Tr(
+        td(
+            [
+                'Max: ' . nformat($_24hmax),
+                sprintf( '%+.02f', $array->[1]->[1] ),
+                'Max: ' . nformat($_30dmax),
+                sprintf( '%+.02f', $array->[1]->[3] ),
+                '24h volume: ' . large_num( $array->[1]->[-1] )
+            ]
+        )
+      );
     push @t1_rows, Tr(
-        td( [  'Min: ' . nformat($_24hmin),
-               sprintf( '%+.02f', $array->[2]->[1] ),
-               'Min: ' . nformat($_30dmin),
-               sprintf( '%+.02f', $array->[2]->[3] ),
+        td(
+            [
+                'Min: ' . nformat($_24hmin),
+                sprintf( '%+.02f', $array->[2]->[1] ),
+                'Min: ' . nformat($_30dmin),
+                sprintf( '%+.02f', $array->[2]->[3] ),
 
-               'Market cap: ' . large_num( $array->[2]->[-1] ) ] ) );
+                'Market cap: ' . large_num( $array->[2]->[-1] )
+            ]
+        )
+    );
     push @t1_rows,
-        Tr( td( [ 'Spread: ' . nformat( $array->[3]->[0] ),
-                  sprintf( '%.01f%%', $array->[3]->[1] ),
-                  'Spread: ' . nformat( $array->[3]->[2] ),
-                  sprintf( '%.01f%%', $array->[3]->[3] ),
-                  'Est. coins: ' . large_num( $array->[3]->[-1] ) ] ) );
+      Tr(
+        td(
+            [
+                'Spread: ' . nformat( $array->[3]->[0] ),
+                sprintf( '%.01f%%', $array->[3]->[1] ),
+                'Spread: ' . nformat( $array->[3]->[2] ),
+                sprintf( '%.01f%%', $array->[3]->[3] ),
+                'Est. coins: ' . large_num( $array->[3]->[-1] )
+            ]
+        )
+      );
     ### ==================================================
     my $hist_table;
     my $pred_table;
 
     push @{$hist_table},
-        th( [ 'Event',            'Date',
-              'Price',            'Difference',
-              'Change in %',      'Volume (BTC)',
-              "Price &#215; Vol", 'Market cap' ] );
+      th(
+        [
+            'Event',            'Date',
+            'Price',            'Difference',
+            'Change in %',      'Volume (BTC)',
+            "Price &#215; Vol", 'Market cap'
+        ]
+      );
 
-    my ( $slope_exp, $slope_lin )
-        = map { $D->{scaffolding}->{coefficients}->{$_} }
-        qw/slope_exp slope_lin/;
-    my $exp_header
-        = sprintf( "Exponential trend<br />%.02f%% / day", $slope_exp * 100 );
-    my $lin_header
-        = sprintf( "Linear trend<br />USD %.02f / day", $slope_lin );
+    my ( $slope_exp, $slope_lin ) =
+      map { $D->{scaffolding}->{coefficients}->{$_} } qw/slope_exp slope_lin/;
+    my $exp_header =
+      sprintf( "Exponential trend<br />%.02f%% / day", $slope_exp * 100 );
+    my $lin_header = sprintf( "Linear trend<br />USD %.02f / day", $slope_lin );
     push @{$pred_table},
-        th( [ 'Event',      'Date',      'Price', $exp_header,
-              'Difference', $lin_header, 'Differrence' ] );
+      th(
+        [
+            'Event',      'Date',      'Price', $exp_header,
+            'Difference', $lin_header, 'Differrence'
+        ]
+      );
 
     foreach my $line ( @{ $D->{history} } ) {
-        my ( $label,    $date,     $price,    $diff,
-             $pct,      $vol,      $mcap,     $short,
-             $exp_pred, $exp_diff, $lin_pred, $lin_diff ) = @{$line};
+        my (
+            $label, $date,  $price,    $diff,     $pct,      $vol,
+            $mcap,  $short, $exp_pred, $exp_diff, $lin_pred, $lin_diff
+        ) = @{$line};
         $diff = sprintf( '%+.02f', $diff );
         $pct  = sprintf( '%+.01f', $pct );
         push @{$hist_table},
-            td( [ "$label ($short)",          $date,
-                  nformat($price),            color_num($diff),
-                  color_num( $pct . '%' ),    large_num($vol),
-                  large_num( $vol * $price ), large_num($mcap) ] );
+          td(
+            [
+                "$label ($short)",          $date,
+                nformat($price),            color_num($diff),
+                color_num( $pct . '%' ),    large_num($vol),
+                large_num( $vol * $price ), large_num($mcap)
+            ]
+          );
         push @{$pred_table},
-            td( [ "$label ($short)",    $date,
-                  nformat($price),      nformat($exp_pred),
-                  color_num($exp_diff), nformat($lin_pred),
-                  color_num($lin_diff) ] );
+          td(
+            [
+                "$label ($short)",    $date,
+                nformat($price),      nformat($exp_pred),
+                color_num($exp_diff), nformat($lin_pred),
+                color_num($lin_diff)
+            ]
+          );
     }
 
     ### ==================================================
@@ -599,33 +659,37 @@ sub html_out {
     my $marketcap_table;
     if ( $config->{show_cap_html} ) {
         push @{$marketcap_table},
-            th( [ 'Rank',
-                  'Currency (symbol)',
-                  'Marketcap USD',
-                  'USD price',
-                  'BTC price',
-                  'Dominance',
-                  'Total supply',
-                  'Available supply in %',
-                  '1h change',
-                  '24h change',
-                  '7d change' ] );
+          th(
+            [
+                'Rank',
+                'Currency (symbol)',
+                'Marketcap USD',
+                'USD price',
+                'BTC price',
+                'Dominance',
+                'Total supply',
+                'Available supply in %',
+                '1h change',
+                '24h change',
+                '7d change'
+            ]
+          );
         for my $entry ( @{ $D->{marketcap}->{list} } ) {
             my $rank;
             my $currency;
             if ( $entry->{symbol} eq 'others' ) {
-                $currency
-                    = $entry->{name} . ' ('
-                    . $D->{marketcap}->{total_other_coins}
-                    . ' coins)<sup>**</sup>';
+                $currency =
+                    $entry->{name} . ' ('
+                  . $D->{marketcap}->{total_other_coins}
+                  . ' coins)<sup>**</sup>';
                 $rank = 'n/a';
-            } elsif ( $entry->{symbol} eq 'BTC' ) {
-                $currency
-                    = $entry->{name} . ' ('
-                    . $entry->{symbol}
-                    . ')<sup>*</sup>';
+            }
+            elsif ( $entry->{symbol} eq 'BTC' ) {
+                $currency =
+                  $entry->{name} . ' (' . $entry->{symbol} . ')<sup>*</sup>';
                 $rank = $entry->{rank};
-            } else {
+            }
+            else {
                 $currency = $entry->{name} . ' (' . $entry->{symbol} . ')';
                 $rank     = $entry->{rank};
             }
@@ -634,48 +698,53 @@ sub html_out {
             if ( defined $entry->{market_cap_usd} ) {
                 $mcap      = large_num( $entry->{market_cap_usd} );
                 $dominance = sprintf( '%.01f%%',
-                                            $entry->{market_cap_usd}
-                                          / $D->{marketcap}->{total_mcap}
-                                          * 100 );
-            } else {
+                    $entry->{market_cap_usd} /
+                      $D->{marketcap}->{total_mcap} *
+                      100 );
+            }
+            else {
                 $mcap      = 'n/a';
                 $dominance = 'n/a';
             }
             my $total;
             if ( defined $entry->{total_supply} ) {
                 $total = large_num( $entry->{total_supply} );
-            } else {
+            }
+            else {
                 $total = 'n/a';
             }
 
             my $unit_price = sprintf( '%.02f', $entry->{price_usd} );
-            my $btc_price
-                = defined $entry->{price_btc}
-                ? sprintf( '%.03E', $entry->{price_btc} )
-                : 'n/a';
+            my $btc_price =
+              defined $entry->{price_btc}
+              ? sprintf( '%.03E', $entry->{price_btc} )
+              : 'n/a';
 
             my $pct_avail;
-            if (     defined $entry->{total_supply}
-                 and defined $entry->{available_supply} )
+            if (    defined $entry->{total_supply}
+                and defined $entry->{available_supply} )
             {
                 $pct_avail = sprintf( '%.01f%%',
-                                            $entry->{available_supply}
-                                          / $entry->{total_supply}
-                                          * 100 );
-            } else {
+                    $entry->{available_supply} / $entry->{total_supply} * 100 );
+            }
+            else {
                 $pct_avail = 'n/a';
             }
             my @changes = map {
                 defined( $entry->{ 'percent_change_' . $_ }
-                    )    # check if there is data...
-                    ? (color_num( $entry->{ 'percent_change_' . $_ } . '%' ) )
-                    : 'n/a'
+                  )    # check if there is data...
+                  ? ( color_num( $entry->{ 'percent_change_' . $_ } . '%' ) )
+                  : 'n/a'
             } qw/1h 24h 7d/;
 
             push @{$marketcap_table},
-                td( [ $rank,       $currency,  $mcap,
-                      $unit_price, $btc_price, $dominance,
-                      $total,      $pct_avail, @changes ] );
+              td(
+                [
+                    $rank,       $currency,  $mcap,
+                    $unit_price, $btc_price, $dominance,
+                    $total,      $pct_avail, @changes
+                ]
+              );
         }
     }
 
@@ -690,66 +759,89 @@ sub html_out {
     ### =================================================
     my @draper = map { $D->{draper}->{$_} } qw/coins price_at_purchase/;
     my @past_events = (
-        {  header  => "Tim Draper's coins from Silk Road",
-           content => [
-               sprintf(
+        {
+            header  => "Tim Draper's coins from Silk Road",
+            content => [
+                sprintf(
 "On 27 Jun 2014, investor Tim Draper paid approximately USD&nbsp;%.02f/coin for %s BTC seized from Silk Road. ",
-                   $draper[1], $draper[0] ),
-               sprintf( "Purchase price: USD&nbsp;%s",
-                        large_num( $draper[0] * $draper[1] ) ),
-               sprintf( "Price now: USD&nbsp;%s",
-                        large_num( $draper[0] * $last ) ),
-               sprintf( "Draper's win/loss: USD&nbsp;%s",
-                        large_num( $draper[0] * ( $last - $draper[1] ) ) ), ]
+                    $draper[1], $draper[0]
+                ),
+                sprintf( "Purchase price: USD&nbsp;%s",
+                    large_num( $draper[0] * $draper[1] ) ),
+                sprintf( "Price now: USD&nbsp;%s",
+                    large_num( $draper[0] * $last ) ),
+                sprintf( "Draper's win/loss: USD&nbsp;%s",
+                    large_num( $draper[0] * ( $last - $draper[1] ) ) ),
+            ]
         },
-        {  header  => "The Bitcoin pizza",
-           content => [
+        {
+            header  => "The Bitcoin pizza",
+            content => [
 "On 22nd May 2010, Bitcoin enthusiast Laszlo Hanyec bought a pizza for 10,000 bitcoins. More specifically, he sent the coins to someone else who purchased the pizza for him.",
-               sprintf( "The Bitcoin pizza is currently worth USD&nbsp;%s.",
-                        nformat( 10_000 * $last ) ),
+                sprintf( "The Bitcoin pizza is currently worth USD&nbsp;%s.",
+                    nformat( 10_000 * $last ) ),
 "See the <a href='https://twitter.com/bitcoin_pizza'>\@bitcoin_pizza</a> Twitter account for up-to-date values!",
-           ], },
-        {  header  => "The white Mini Cooper",
-           content => [
-               sprintf(
+            ],
+        },
+        {
+            header  => "The white Mini Cooper",
+            content => [
+                sprintf(
 "On 7 Jun 2014, Andreas M. Antonopoulos offered a white Mini Cooper for sale for 14BTC. At the time, the VWAP was USD&nbsp;652.76, so the sales price (assuming it went through) was USD&nbsp;%s.",
-                   nformat( 14 * 652.76 ) ),
-               sprintf( "Today, the same car is worth USD&nbsp;%s.",
-                        nformat( 14 * $last ) ),
+                    nformat( 14 * 652.76 ) ),
+                sprintf( "Today, the same car is worth USD&nbsp;%s.",
+                    nformat( 14 * $last ) ),
 "(Source: <a href='https://twitter.com/aantonop/status/475048024453152768'>\@aantonop tweet</a>.)"
-           ], },
-        {  header  => "2016 Bitfinex hack",
-           content => [
+            ],
+        },
+        {
+            header  => "2016 Bitfinex hack",
+            content => [
 "On 2 Aug 2016, the exchange Bitfinex announced they had suffered a security breach and that 119,756 BTC were stolen.",
-               sprintf( "Current value of the stolen coins is USD&nbsp;%s.",
-                        nformat( 119_756 * $last ) ) ], },
-		       { header => "Price of a Leica Noctilux-M 75mm f/1.25 ASPH lens",
-			 content=> ["The price of this lens was \$12,795 at announcement. The price of this lens in BTC is ".sprintf("%.05f BTC.", 12795/$last)]},
+                sprintf( "Current value of the stolen coins is USD&nbsp;%s.",
+                    nformat( 119_756 * $last ) )
+            ],
+        },
+        {
+            header  => "Price of a Leica Noctilux-M 75mm f/1.25 ASPH lens",
+            content => [
+"The price of this lens was \$12,795 at announcement. The price of this lens in BTC is "
+                  . sprintf( "%.05f BTC.", 12795 / $last )
+            ]
+        },
 
-		      );
+    );
 
     ### Output ########################################
 
     print header;
     my $title = sprintf( "\$%s (%+.02f)", $last, $diff );
     print start_html(
-           -title => "$title",
-           -head  => [
-               Link(
-                   { -rel   => 'stylesheet',
-                     -type  => 'text/css',
-                     -media => 'all',
-                     -href  => 'http://gerikson.com/stylesheets/btcticker.css'
-                   } ) ] );
+        -title => "$title",
+        -head  => [
+            Link(
+                {
+                    -rel   => 'stylesheet',
+                    -type  => 'text/css',
+                    -media => 'all',
+                    -href  => 'http://gerikson.com/stylesheets/btcticker.css'
+                }
+            )
+        ]
+    );
 
     print h1( nformat($last) );
 
-    print p( sprintf( "Updated on %s (%s ago).",
-                      epoch_to_parts( $array->[0]->[2] )->{std},
-                      eta_time( $array->[0]->[3] ) ),
-             ' Data from ',
-             a( { href => "https://bitcoinaverage.com/" }, "Bitcoinaverage" ),
-             '.' );
+    print p(
+        sprintf(
+            "Updated on %s (%s ago).",
+            epoch_to_parts( $array->[0]->[2] )->{std},
+            eta_time( $array->[0]->[3] )
+        ),
+        ' Data from ',
+        a( { href => "https://bitcoinaverage.com/" }, "Bitcoinaverage" ),
+        '.'
+    );
 
     print h2("At a glance");
 
@@ -766,10 +858,11 @@ sub html_out {
         print p(
 "A more correct term is aggregated value - it's the product of last price and outstanding coins or tokens."
         );
-        print p( "Data from ",
-                 a( { href => "https://coinmarketcap.com/" },
-                     "Coinmarketcap.com" )
-                     . '.' );
+        print p(
+            "Data from ",
+            a( { href => "https://coinmarketcap.com/" }, "Coinmarketcap.com" )
+              . '.'
+        );
         print p( "Fetched on ", $D->{marketcap}->{fetched}, 'UTC.' );
 
         print table( {}, Tr( {}, $marketcap_table ) );
@@ -778,10 +871,15 @@ sub html_out {
 		price, and number of coins may differ from other
 		values on this page due to different methodology and
 		update times. See ",
-            a(  {  href =>
-                       'http://gerikson.com/btcticker/about.html#marketcap' },
-                'this section' ),
-            "for more information." );
+            a(
+                {
+                    href =>
+                      'http://gerikson.com/btcticker/about.html#marketcap'
+                },
+                'this section'
+            ),
+            "for more information."
+        );
         print p(
             "<sup>**</sup> Values for total supply, unit price,
 		supply percentage, and change percentages are
@@ -797,10 +895,12 @@ sub html_out {
     print p(
         sprintf(
 "Current slope: %.02f USD/day. Based on this line, the price will reach: ",
-            $K ) );
+            $K )
+    );
     if ( $K == 0 ) {
         print p("The price will never change in the future.");
-    } else {
+    }
+    else {
         print table( {}, Tr( {}, $future_table ) );
     }
 
@@ -815,11 +915,13 @@ sub html_out {
 
     ### End matter ########################################
     print p(
-        a(  { href => 'http://gerikson.com/btcticker/about.html#Disclaimer' },
-            'Disclaimer' ) );
-    print p(
-          a( { href => 'http://gerikson.com/btcticker/about.html' }, 'About' )
+        a(
+            { href => 'http://gerikson.com/btcticker/about.html#Disclaimer' },
+            'Disclaimer'
+        )
     );
+    print p(
+        a( { href => 'http://gerikson.com/btcticker/about.html' }, 'About' ) );
 }    # html_out
 
 ######################################################################
@@ -828,20 +930,22 @@ sub oneline_out {
     my ($D) = @_;
     my ( $hi, $lo ) = map { $D->{ticker}->{$_} } qw/24h_max 24h_min/;
     print header('text/plain');
-    my $line = sprintf( "Last: \$%.02f [%+.02f] ",
-                        $D->{ticker}->{last}, $D->{ticker}->{ntl_diff} );
+    my $line = sprintf(
+        "Last: \$%.02f [%+.02f] ",
+        $D->{ticker}->{last},
+        $D->{ticker}->{ntl_diff}
+    );
     $line .= sprintf( "(H:%.02f/L:%.02f/S:%.02f) Vol %s | ",
-                      $hi, $lo, $hi - $lo,
-                      large_num( $D->{ticker}->{volume} ) );
+        $hi, $lo, $hi - $lo, large_num( $D->{ticker}->{volume} ) );
 
     my $coins_now = $D->{layout}->[3]->[-1];
-    $line .= sprintf( "Mcap %s | ",
-                      large_num( $D->{ticker}->{last} * $coins_now ) );
+    $line .=
+      sprintf( "Mcap %s | ", large_num( $D->{ticker}->{last} * $coins_now ) );
     $line .= eta_time( $D->{ticker}->{age} ) . " ago | ";
     my @array;
     foreach my $l ( @{ $D->{history} } ) {
         my ( $pct, $short ) = @{$l}[ 4, 7 ];
-	next if ( $short eq '3mo' or $short eq '3yr' or $short eq '4yr' );
+        next if ( $short eq '3mo' or $short eq '3yr' or $short eq '4yr' );
         push @array, sprintf( "%s %+.01f%%;", $short, $pct );
     }
     $line .= join( ' ', @array );
@@ -857,9 +961,11 @@ sub mcap_out {
     my $total_mcap = $D->{marketcap}->{total_mcap};
     my $list       = $D->{marketcap}->{list};
     print BLUE;
-    printf( "%4s %7s %8s %7s %7s %8s %7s %8s %7s %7s",
-            '#',     'Coin',   'Mcap', 'Price', 'Domi',
-            'Total', 'Avail%', '1h',   '24h',   '7d' );
+    printf(
+        "%4s %7s %8s %7s %7s %8s %7s %8s %7s %7s",
+        '#',     'Coin',   'Mcap', 'Price', 'Domi',
+        'Total', 'Avail%', '1h',   '24h',   '7d'
+    );
     print RESET. "\n";
     my $line_count = 1;
     my @volumes;
@@ -868,72 +974,78 @@ sub mcap_out {
     foreach my $el ( @{$list} ) {
         my ( $rank, $name ) = map { $el->{$_} } qw/rank symbol/;
         my ($unit_price) = $el->{price_usd};
-        my ( $mcap, $total )
-            = map { defined( $el->{$_} ) ? large_num( $el->{$_} ) : 'n/a' }
-            qw/market_cap_usd total_supply /;
+        my ( $mcap, $total ) =
+          map { defined( $el->{$_} ) ? large_num( $el->{$_} ) : 'n/a' }
+          qw/market_cap_usd total_supply /;
 
-        my $_24h_vol
-            = $el->{'24h_volume_usd'} ? $el->{'24h_volume_usd'} : 'n/a';
+        my $_24h_vol =
+          $el->{'24h_volume_usd'} ? $el->{'24h_volume_usd'} : 'n/a';
 
         # some hackery for specific volumes and prices
         if ( $name eq 'BTC' or $name eq 'BCH' or $name eq 'ETH' ) {
             push @volumes,
-                { symbol => $name, rank => $rank, volume => $_24h_vol, unitvol=>$_24h_vol/$unit_price };
+              {
+                symbol  => $name,
+                rank    => $rank,
+                volume  => $_24h_vol,
+                unitvol => $_24h_vol / $unit_price
+              };
             $compare_prices{$name} = $unit_price;
         }
         my $avail_pct;
         if ( defined $el->{total_supply} ) {
             $avail_pct = $el->{available_supply} / $el->{total_supply} * 100;
-            $avail_pct
-                = $avail_pct == 100
-                ? sprintf( '%02d',  $avail_pct )
-                : sprintf( '%.01f', $avail_pct );
-        } else {
+            $avail_pct =
+              $avail_pct == 100
+              ? sprintf( '%02d',  $avail_pct )
+              : sprintf( '%.01f', $avail_pct );
+        }
+        else {
             $avail_pct = 'n/a';
         }
         my $frac_of_top;
         if ( defined $el->{market_cap_usd} ) {
-            $frac_of_top = sprintf( "%6.01f%%",
-                                          $el->{market_cap_usd}
-                                        / $total_mcap
-                                        * 100 );
-        } else {
+            $frac_of_top =
+              sprintf( "%6.01f%%", $el->{market_cap_usd} / $total_mcap * 100 );
+        }
+        else {
             $frac_of_top = 'n/a';
         }
 
         my @changes = map {
             defined $el->{$_}
-                ? (    # need to code defensively if there's no actual data
+              ? (    # need to code defensively if there's no actual data
                 $el->{$_} < 0
                 ? RED . sprintf( '%.01f%%', $el->{$_} ) . RESET
-                : GREEN . sprintf( '%.01f%%', $el->{$_} ) . RESET )
-                : YELLOW . 'n/a'
-                . RESET
+                : GREEN . sprintf( '%.01f%%', $el->{$_} ) . RESET
+              )
+              : YELLOW . 'n/a'
+              . RESET
         } qw/percent_change_1h percent_change_24h percent_change_7d/;
         printf( "%4d %7s %8s %8.02f %7s %8s %6s%%  %16s %16s %16s\n",
-                $rank, $name, $mcap, $unit_price, $frac_of_top, $total,
-                $avail_pct, @changes );
+            $rank, $name, $mcap, $unit_price, $frac_of_top, $total,
+            $avail_pct, @changes );
         $line_count++;
     }
 
     # some extra data
-    my $vol_line = '   24h USD vol: ';
+    my $vol_line      = '   24h USD vol: ';
     my $unit_vol_line = '  24h unit vol: ';
-    my $prc_line = '  currency/BTC: ';
+    my $prc_line      = '  currency/BTC: ';
     foreach my $item ( sort { $b->{volume} <=> $a->{volume} } @volumes ) {
         $vol_line .= sprintf( " %4s %8s |",
-                              $item->{symbol} . ' (' . $item->{rank} . ')',
-                              large_num( $item->{volume} ) );
-	$unit_vol_line.=sprintf(" %4s %8s |",
-				'---"---',large_num($item->{unitvol} ));
+            $item->{symbol} . ' (' . $item->{rank} . ')',
+            large_num( $item->{volume} ) );
+        $unit_vol_line .=
+          sprintf( " %4s %8s |", '---"---', large_num( $item->{unitvol} ) );
         $prc_line .= sprintf( " %4s %8.02e |",
-                  '---"---',
-                  $compare_prices{ $item->{symbol} } / $compare_prices{BTC} );
+            '---"---',
+            $compare_prices{ $item->{symbol} } / $compare_prices{BTC} );
 
     }
-    print $vol_line, "\n";
-    print $unit_vol_line,"\n";
-    print $prc_line, "\n";
+    print $vol_line,      "\n";
+    print $unit_vol_line, "\n";
+    print $prc_line,      "\n";
     $line_count += 3;
 
     # pad the output to fit the screen
@@ -971,36 +1083,44 @@ for my $r ( @{$result} ) {
 
 my $ntl_diff = $_10min[1]->[2];
 $Data->{"price_history_last_hours"} = \@_10min;
-$Data->{changes}->{hour} = { open => $latest->[5],
-			      change_pct=>$latest->[6],
-			     change_price =>$latest->[7]}  ;
-$Data->{changes}->{day} = { open => $latest->[8],
-			   change_pct=>$latest->[9],
-			   change_price => $latest->[10] };
-$Data->{changes}->{week} ={ open => $latest->[11],
-			   change_pct=>$latest->[12],
-			   change_price => $latest->[13] };
+$Data->{changes}->{hour} = {
+    open         => $latest->[5],
+    change_pct   => $latest->[6],
+    change_price => $latest->[7]
+};
+$Data->{changes}->{day} = {
+    open         => $latest->[8],
+    change_pct   => $latest->[9],
+    change_price => $latest->[10]
+};
+$Data->{changes}->{week} = {
+    open         => $latest->[11],
+    change_pct   => $latest->[12],
+    change_price => $latest->[13]
+};
 $sth->finish();
 my $now = time();
 
-my $_24h_ref = $dbh->selectcol_arrayref( $Sql{daily_min_max},
-                                         { Columns => [ 1, 2 ] } );
+my $_24h_ref =
+  $dbh->selectcol_arrayref( $Sql{daily_min_max}, { Columns => [ 1, 2 ] } );
 
 my ( $_24h_min, $_24h_max ) = @{$_24h_ref};
 
 my $last = $latest->[1];
-$Data->{ticker} = { timestamp => $latest->[0],
-                    age       => $now - $latest->[0],
-                    last      => $last,
-                    '24h_max' => $_24h_max,
-                    '24h_min' => $_24h_min,
-                    volume    => $latest->[4],
-                    ntl_diff  => $ntl_diff, };
+$Data->{ticker} = {
+    timestamp => $latest->[0],
+    age       => $now - $latest->[0],
+    last      => $last,
+    '24h_max' => $_24h_max,
+    '24h_min' => $_24h_min,
+    volume    => $latest->[4],
+    ntl_diff  => $ntl_diff,
+};
 
 ### 30 day min/max
 
-my $_30d_ref = $dbh->selectcol_arrayref( $Sql{monthly_min_max},
-                                         { Columns => [ 1, 2 ] } );
+my $_30d_ref =
+  $dbh->selectcol_arrayref( $Sql{monthly_min_max}, { Columns => [ 1, 2 ] } );
 
 my ( $_30d_min, $_30d_max ) = @{$_30d_ref};
 if ( $_24h_max > $_30d_max ) { $_30d_max = $_24h_max }
@@ -1025,25 +1145,27 @@ my %fixed;
 $fixed{180} = { label => '6 months ago', short => '6mo' };
 $fixed{1}   = { label => '24 hours ago', short => '24h' };
 $fixed{30}  = { label => '1 month ago',  short => '1mo' };
-$fixed{90} ={label=>'3 months ago', short=>'3mo'};
+$fixed{90}  = { label => '3 months ago', short => '3mo' };
 $fixed{365} = { label => '1 year ago',   short => '1yr' };
 $fixed{3}   = { label => '3 days ago',   short => '3dy' };
+
 #$fixed{730} = { label => '2 years ago',  short => '2yr' };
-$fixed{7}   = { label => '1 week ago',   short => '1wk' };
+$fixed{7} = { label => '1 week ago', short => '1wk' };
+
 #$fixed{1095}= { label => '3 years ago', short=>'3yr' };
 
-for my $yr (2,3,4) {
-    $fixed{$yr*365} = { label => "$yr years ago", short=> $yr.'yr' };
+for my $yr ( 2, 3, 4 ) {
+    $fixed{ $yr * 365 } = { label => "$yr years ago", short => $yr . 'yr' };
 }
 
-		      
-
-my $labels = { ath   => { label => 'Record high ("ATH")' },
-               ytd   => { label => "Year to date" },
-               'yhi' => { label => "This year's high" },
-               'ylo' => { label => "This year's low" },
-               'zhi' => { label => "365d rolling high", short => 'rhi' },
-               'zlo' => { label => "365d rolling low", short => 'rlo' } };
+my $labels = {
+    ath   => { label => 'Record high ("ATH")' },
+    ytd   => { label => "Year to date" },
+    'yhi' => { label => "This year's high" },
+    'ylo' => { label => "This year's low" },
+    'zhi' => { label => "365d rolling high", short => 'rhi' },
+    'zlo' => { label => "365d rolling low", short => 'rlo' }
+};
 
 foreach my $day ( sort { $a <=> $b } keys %fixed ) {
     if ( $day == 1 ) {    # special case
@@ -1054,13 +1176,13 @@ foreach my $day ( sort { $a <=> $b } keys %fixed ) {
         warn DBI->errstr if $rv < 0;
         while ( my $ary = $sth->fetchrow_arrayref ) {
             $history->{ sprintf( "%03d_day", $day ) } = {
-                                               timestamp => $ary->[0],
-                                               average   => $ary->[1],
-                                               high      => $ary->[2],
-                                               low       => $ary->[3],
-                                               volume    => $ary->[4],
-                                               label => $fixed{$day}->{label},
-                                               short => $fixed{$day}->{short}
+                timestamp => $ary->[0],
+                average   => $ary->[1],
+                high      => $ary->[2],
+                low       => $ary->[3],
+                volume    => $ary->[4],
+                label     => $fixed{$day}->{label},
+                short     => $fixed{$day}->{short}
             };
         }
         $sth->finish();
@@ -1073,13 +1195,13 @@ foreach my $day ( sort { $a <=> $b } keys %fixed ) {
         my ( $timestamp, $high, $low, $average, $volume ) = @$aryref;
 
         $history->{ sprintf( "%03d_day", $day ) } = {
-                                               timestamp => $timestamp,
-                                               high      => $high,
-                                               low       => $low,
-                                               average   => $average,
-                                               volume    => $volume,
-                                               short => $fixed{$day}->{short},
-                                               label => $fixed{$day}->{label}
+            timestamp => $timestamp,
+            high      => $high,
+            low       => $low,
+            average   => $average,
+            volume    => $volume,
+            short     => $fixed{$day}->{short},
+            label     => $fixed{$day}->{label}
         };
     }
 }
@@ -1089,7 +1211,8 @@ foreach my $tag (qw(ath ytd yhi ylo zhi zlo)) {
     my $short;
     if ( defined $labels->{$tag}->{short} ) {
         $short = $labels->{$tag}->{short};
-    } else {
+    }
+    else {
         $short = $tag;
     }
     $sth = $dbh->prepare( $Sql{$tag} );
@@ -1098,13 +1221,13 @@ foreach my $tag (qw(ath ytd yhi ylo zhi zlo)) {
     while ( my $ary = $sth->fetchrow_arrayref ) {
         my ( $day, $timestamp, $high, $low, $average, $volume ) = @$ary;
         $history->{ sprintf( "%03d_%s", $day, $tag ) } = {
-                                             timestamp => $timestamp,
-                                             high      => $high,
-                                             low       => $low,
-                                             average   => $average,
-                                             volume    => $volume,
-                                             short     => $short,
-                                             label => $labels->{$tag}->{label}
+            timestamp => $timestamp,
+            high      => $high,
+            low       => $low,
+            average   => $average,
+            volume    => $volume,
+            short     => $short,
+            label     => $labels->{$tag}->{label}
         };
     }
 }
@@ -1132,24 +1255,28 @@ $Data->{layout} = [    # last, update, date, ago
     [ $last, $ntl_diff, $latest->[0], $now - $latest->[0] ],
 
     # Max row, volume
-    [  $_24h_max,         $last - $_24h_max, $_30d_max,
-       $last - $_30d_max, $latest->[4] ],
+    [
+        $_24h_max, $last - $_24h_max, $_30d_max, $last - $_30d_max, $latest->[4]
+    ],
 
     # Min row, Mcap
-    [  $_24h_min,
-       $last - $_24h_min,
-       $_30d_min,
-       $last - $_30d_min,
-       $last * $coins_now ],
+    [
+        $_24h_min,
+        $last - $_24h_min,
+        $_30d_min,
+        $last - $_30d_min,
+        $last * $coins_now
+    ],
 
     # spread, no of coins
-    [  $_24h_max - $_24h_min,
-       ( $_24h_max - $_24h_min ) / $last * 100,
-       $_30d_max - $_30d_min,
-       ( $_30d_max - $_30d_min ) / $last * 100,
-       $coins_now ], ];
-
-
+    [
+        $_24h_max - $_24h_min,
+        ( $_24h_max - $_24h_min ) / $last * 100,
+        $_30d_max - $_30d_min,
+        ( $_30d_max - $_30d_min ) / $last * 100,
+        $coins_now
+    ],
+];
 
 # common format for historical data
 
@@ -1158,9 +1285,8 @@ my $date_list;
 
 ### linear and exponential predictions
 
-my ( $k_e, $m_e, $k_l, $m_l )
-    = map { $coefficients->{$_} }
-    qw/slope_exp intercept_exp slope_lin intercept_lin/;
+my ( $k_e, $m_e, $k_l, $m_l ) = map { $coefficients->{$_} }
+  qw/slope_exp intercept_exp slope_lin intercept_lin/;
 my $exp_price = sub { my ($d) = @_; return exp($m_e) * exp( $k_e * $d ); };
 my $lin_price = sub { my ($d) = @_; return $k_l * $d + $m_l; };
 
@@ -1170,9 +1296,11 @@ foreach my $tag ( sort by_number keys %{$history} ) {
     my $price;
     if ( $tag =~ 'yhi$' or $tag =~ 'ath$' or $tag =~ 'zhi$' ) {
         $price = $history->{$tag}->{high};
-    } elsif ( $tag =~ 'ylo$' or $tag =~ 'zlo$' ) {
+    }
+    elsif ( $tag =~ 'ylo$' or $tag =~ 'zlo$' ) {
         $price = $history->{$tag}->{low};
-    } else {
+    }
+    else {
         $price = $history->{$tag}->{average};
     }
 
@@ -1182,7 +1310,7 @@ foreach my $tag ( sort by_number keys %{$history} ) {
     my $tot  = $vol * $price;
     my $date = datetime_to_parts( $history->{$tag}->{timestamp} )->{ymd};
     push @{ $seen{$date} }, $tag;
-    my $jd = datetime_to_parts( $history->{$tag}->{timestamp} )->{jd};
+    my $jd          = datetime_to_parts( $history->{$tag}->{timestamp} )->{jd};
     my $no_of_coins = number_of_bitcoins($jd);
     my $market_cap  = $no_of_coins * $price;
     next if ( scalar @{ $seen{$date} } > 1 and $tag =~ /[hi|lo]$/ );
@@ -1195,12 +1323,14 @@ foreach my $tag ( sort by_number keys %{$history} ) {
     my $lin_diff = $price - $lin_pred;
 
     push @{ $Data->{history} },
-        [ $history->{$tag}->{label}, $date,
-          $price,                    $diff,
-          $pct,                      $vol,
-          $market_cap,               $history->{$tag}->{short},
-          $exp_pred,                 $exp_diff,
-          $lin_pred,                 $lin_diff ];
+      [
+        $history->{$tag}->{label}, $date,
+        $price,                    $diff,
+        $pct,                      $vol,
+        $market_cap,               $history->{$tag}->{short},
+        $exp_pred,                 $exp_diff,
+        $lin_pred,                 $lin_diff
+      ];
 
 }
 
@@ -1211,30 +1341,27 @@ my $date_from_price = sub { my ($p) = @_; return ( $p - $M ) / $K; };
 my $price_from_date = sub { my ($d) = @_; return $K * $d + $M; };
 
 my %price_targets = (
-    apr2013hi     => { p => 213.72, label => "Apr 2013 high" },
-    prebubbleline => { p => 125,    label => "Pre-bubble price level" },
-    gox_end       => { p => 133.35, label => 'Gox last price' },
-    apr2014lo     => { p => 347.68, label => "Apr 2014 low" },
-
-    #       zero => { p => 0,      label => 'All time low' },
-    dollar_parity => { p => 1, label => 'Dollar parity' },
-
-#  current_ltc => {p=>45, label => 'Current Litecoin level (relative to peak)'},
-    blaze => { p => 420, label => "Blazin'" },
-
-    #	      mar2017hi3 => { p=>2*1286.75, label=>'Twice Mar 2017 high'},
-    #  nov2013hi2 => { p =>2*1132.26, label => "Twice Nov 2013 high"},
+    apr2013hi     => { p => 213.72,    label => "Apr 2013 high" },
+    prebubbleline => { p => 125,       label => "Pre-bubble price level" },
+    gox_end       => { p => 133.35,    label => 'Gox last price' },
+    apr2014lo     => { p => 347.68,    label => "Apr 2014 low" },
+    dollar_parity => { p => 1,         label => 'Dollar parity' },
+    blaze         => { p => 420,       label => "Blazin'" },
     ten_k         => { p => 10_000,    label => "USD 10k" },
     million       => { p => 1_000_000, label => 'MOON' },
     twice_current => { p => 2 * $last, label => "Twice current price" },
     spartans_hodl => { p => 300,       label => "Spartans HODL!!!" },
-		     sixtynine => { p => 69, label => "Sixty-Nine, \@Hubbabubba's fav" },
-bitfinex_1B=>{p=>1_000_000_000/119_756, label=>"Stolen Bitfinex coins worth \$1.00B"},		     
+    sixtynine   => { p => 69, label => "Sixty-Nine, \@Hubbabubba's fav" },
+    bitfinex_1B => {
+        p     => 1_000_000_000 / 119_756,
+        label => "Stolen Bitfinex coins worth \$1.00B"
+    },
 );
 
-#$Data->{future_prices}->{metadata} = { K => $K, M => $M };
-foreach my $tag ( sort { $price_targets{$b}->{p} <=> $price_targets{$a}->{p} }
-                  keys %price_targets )
+foreach my $tag (
+    sort { $price_targets{$b}->{p} <=> $price_targets{$a}->{p} }
+    keys %price_targets
+  )
 {
     my $p  = $price_targets{$tag}->{p};
     my $jd = &$date_from_price($p);
@@ -1244,23 +1371,25 @@ foreach my $tag ( sort { $price_targets{$b}->{p} <=> $price_targets{$a}->{p} }
     next if ( abs( $last - $p ) / $last < 0.1 );
     if ( ( $K > 0 and $last < $p ) or ( $K < 0 and $last > $p ) ) {
         push @{ $Data->{future_prices}->{table} },
-            [ $price_targets{$tag}->{label}, nformat($p),
-              hum_duration( $epoch - $now ) ];
+          [
+            $price_targets{$tag}->{label}, nformat($p),
+            hum_duration( $epoch - $now )
+          ];
     }
 }
 
 #### Coinmarketcap data ########################################
 
-my $marketcap_ref
-    = $dbh->selectcol_arrayref( $Sql{marketcap}, { Columns => [ 1, 2 ] } );
+my $marketcap_ref =
+  $dbh->selectcol_arrayref( $Sql{marketcap}, { Columns => [ 1, 2 ] } );
 my $marketcap_data = decode_json( $marketcap_ref->[1] );
 my $marketcap_table;
 my $metadata = pop @{$marketcap_data};
 foreach my $entry ( @{$marketcap_data} ) {
     push @{$marketcap_table},
-        { map { $_ => $entry->{$_} }
-        qw/rank name symbol market_cap_usd total_supply percent_change_7d percent_change_1h percent_change_24h available_supply price_usd 24h_volume_usd price_btc/
-        };
+      { map { $_ => $entry->{$_} }
+          qw/rank name symbol market_cap_usd total_supply percent_change_7d percent_change_1h percent_change_24h available_supply price_usd 24h_volume_usd price_btc/
+      };
 }
 $Data->{marketcap}->{fetched} = $marketcap_ref->[0];
 
@@ -1271,11 +1400,13 @@ foreach my $tag ( "active_other_coins", "total_other_coins", "total_mcap" ) {
 $Data->{marketcap}->{list} = $marketcap_table;
 
 # legacy info for external interface
-$Data->{draper} = { coins             => 29656.51306529,
-                    price_at_purchase => 600,
-                    purchase_value    => 600 * 29656.51306529,
-                    current_value     => $last * 29656.51306529,
-                    win_loss          => ( $last - 600 ) * 29656.51306529 };
+$Data->{draper} = {
+    coins             => 29656.51306529,
+    price_at_purchase => 600,
+    purchase_value    => 600 * 29656.51306529,
+    current_value     => $last * 29656.51306529,
+    win_loss          => ( $last - 600 ) * 29656.51306529
+};
 
 $dbh->disconnect();
 
@@ -1283,15 +1414,20 @@ $dbh->disconnect();
 
 if ( $output eq 'json' ) {
     json_out($Data);
-} elsif ( $output eq 'console' ) {
+}
+elsif ( $output eq 'console' ) {
     console_out($Data);
-} elsif ( $output eq 'irc' ) {
+}
+elsif ( $output eq 'irc' ) {
     oneline_out($Data);
-} elsif ( $output eq 'debug' ) {
+}
+elsif ( $output eq 'debug' ) {
     debug_out($Data);
-} elsif ( $output eq 'mcap' ) {
+}
+elsif ( $output eq 'mcap' ) {
     mcap_out($Data);
-} else {
+}
+else {
     html_out($Data);
 }
 
