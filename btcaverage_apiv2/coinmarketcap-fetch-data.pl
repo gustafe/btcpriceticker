@@ -9,7 +9,7 @@ use BTCtracker qw/get_dbh get_ua/;
 my $debug                  = 0;
 my $no_of_coins_to_display = 15;
 
-my $url = 'https://api.coinmarketcap.com/v1/ticker/';
+my $url = 'https://api.coinmarketcap.com/v1/ticker/?limit=0';
 
 my $sql = "insert into coinmarketcap (timestamp, data)
 values (datetime(?,'unixepoch'),?)";
