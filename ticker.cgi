@@ -1267,7 +1267,9 @@ sub html_out {
         print h2('Current cryptocurrency "marketcaps"');
         print p(
 "A more correct term is aggregated value - it's the product of last price and outstanding coins or tokens."
-        );
+	       );
+	my $mcap_txt = large_num($D->{marketcap}->{total_mcap});
+	print h3("Total: $mcap_txt");
         print p(
             "Data from ",
             a( { href => "https://coinmarketcap.com/" }, "Coinmarketcap.com" )
@@ -1465,6 +1467,6 @@ sub mcap_out {
         print "\n";
         $idx++;
     }
-
-    print "       Fetched: $fetched\n";
+    my $mcap_txt = large_num($total_mcap);
+    print "  Total: $mcap_txt       Fetched: $fetched\n";
 }    # mcap_out
