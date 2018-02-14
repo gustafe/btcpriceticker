@@ -187,8 +187,11 @@ $Data->{"price_history_last_hours"} = \@_10min;
 $Data->{changes}->{hour} = {
     open         => $latest->[5],
     change_pct   => $latest->[6],
-    change_price => $latest->[7]
-};
+			    change_price => $latest->[7],
+			    hour_high => $latest->[2],
+			    hour_low => $latest->[3],
+			   };
+
 $Data->{changes}->{day} = {
     open         => $latest->[8],
     change_pct   => $latest->[9],
@@ -456,7 +459,8 @@ my %price_targets = (
     bitfinex_1B => {
         p     => 1_000_000_000 / 119_756,
         label => "Stolen Bitfinex coins worth \$1.00B"
-    },
+		   },
+		     five_k=>{p=>5_000, label=>'USD 5k'},
 );
 
 foreach my $tag (
@@ -865,11 +869,27 @@ sub console_out {
     #         $period, $hash->{open}, $hash->{change_price},
     #         $hash->{change_pct} );
     # }
+    # last hour
+    my @olh;
+    my %olh_translate = ( open=>BLUE.'O'.RESET, hour_low=>RED.'L'.RESET, hour_high=>GREEN.'H'.RESET);
+    foreach my $tag ('open','hour_low','hour_high') {
+	push @olh, ($olh_translate{$tag},
+		    $D->{changes}->{hour}->{$tag},
+		    $D->{ticker}->{last}-$D->{changes}->{hour}->{$tag},
+		    ( $D->{ticker}->{last}-$D->{changes}->{hour}->{$tag})/$D->{changes}->{hour}->{$tag}*100,
+		   );
+	
+    }
+    push @out, sprintf("%s %.02f (%+.02f) [%.01f%%] %s %.02f (%+.02f) [%.01f%%] %s %.02f (%+.02f) [%.01f%%]",
+#		       BLUE.'O'.RESET,
+		        @olh
+		      );
+
     $d = shift @{$layout};
     push @out,
       sprintf( "%8s %8.02f (%+8.02f) | %8s %8.02f (%+8.02f) | %8s %7s",
         '24h max', $d->[0], $d->[1], '30d max', $d->[2], $d->[3],
-        '24h vol', large_num( $d->[-1] ) );
+	       '24h vol', large_num( $d->[-1] ) );
     $d = shift @{$layout};
     push @out,
       sprintf( "%8s %8.02f (%+8.02f) | %8s %8.02f (%+8.02f) | %8s %7s",
