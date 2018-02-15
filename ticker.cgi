@@ -33,6 +33,9 @@ open_day, change_pct_day, change_price_day,
 open_week, change_pct_week, change_price_week
 from ticker order by timestamp desc limit 10/;
 
+$Sql{'last_hour_ticker'} =
+  qq/select last from ticker where timestamp >= datetime('now','-1 hour')/;
+
 $Sql{'days_ago'} = qq/select 
 timestamp, high, low, average, volume 
 from history 
@@ -141,7 +144,6 @@ sub nformat;
 
 sub by_number;
 
-
 ### OUTPUT FUNCTIONS ########################################
 
 my $api_down      = 0;
@@ -183,14 +185,30 @@ for my $r ( @{$result} ) {
 }
 
 my $ntl_diff = $_10min[1]->[2];
+
+### last hour ticker data - hour open , max, min
+$sth = $dbh->prepare( $Sql{last_hour_ticker} );
+$rv  = $sth->execute();
+warn DBI->errstr if $rv < 0;
+$result = $sth->fetchall_arrayref();
+
+#print Dumper $result;
+my $hour_open = $result->[0]->[0];
+my @latest;
+foreach my $item (@$result) {
+    push @latest, $item->[0];
+}
+my $hour_high = max(@latest);
+my $hour_low  = min(@latest);
+
 $Data->{"price_history_last_hours"} = \@_10min;
 $Data->{changes}->{hour} = {
-    open         => $latest->[5],
+    open         => $hour_open,
     change_pct   => $latest->[6],
-			    change_price => $latest->[7],
-			    hour_high => $latest->[2],
-			    hour_low => $latest->[3],
-			   };
+    change_price => $latest->[7],
+    hour_high    => $hour_high,
+    hour_low     => $hour_low,
+};
 
 $Data->{changes}->{day} = {
     open         => $latest->[8],
@@ -459,8 +477,8 @@ my %price_targets = (
     bitfinex_1B => {
         p     => 1_000_000_000 / 119_756,
         label => "Stolen Bitfinex coins worth \$1.00B"
-		   },
-		     five_k=>{p=>5_000, label=>'USD 5k'},
+    },
+    five_k => { p => 5_000, label => 'USD 5k' },
 );
 
 foreach my $tag (
@@ -554,6 +572,7 @@ sub large_num {    # return numbers in K, M, B based on size
 }
 
 sub epoch_to_parts {
+
     # EX format_utc
     # in: epoch seconds,
     # output: hashref with named fields
@@ -871,25 +890,32 @@ sub console_out {
     # }
     # last hour
     my @olh;
-    my %olh_translate = ( open=>BLUE.'O'.RESET, hour_low=>RED.'L'.RESET, hour_high=>GREEN.'H'.RESET);
-    foreach my $tag ('open','hour_low','hour_high') {
-	push @olh, ($olh_translate{$tag},
-		    $D->{changes}->{hour}->{$tag},
-		    $D->{ticker}->{last}-$D->{changes}->{hour}->{$tag},
-		    ( $D->{ticker}->{last}-$D->{changes}->{hour}->{$tag})/$D->{changes}->{hour}->{$tag}*100,
-		   );
-	
+    my %olh_translate = (
+        open      => BLUE . 'O' . RESET,
+        hour_low  => RED . 'L' . RESET,
+        hour_high => GREEN . 'H' . RESET
+    );
+    foreach my $tag ( 'open', 'hour_low', 'hour_high' ) {
+        push @olh,
+          (
+            $olh_translate{$tag},
+            $D->{changes}->{hour}->{$tag},
+            $D->{ticker}->{last} - $D->{changes}->{hour}->{$tag},
+            ( $D->{ticker}->{last} - $D->{changes}->{hour}->{$tag} ) /
+              $D->{changes}->{hour}->{$tag} * 100,
+          );
+
     }
-    push @out, sprintf("%s %.02f (%+.02f) [%.01f%%] %s %.02f (%+.02f) [%.01f%%] %s %.02f (%+.02f) [%.01f%%]",
-#		       BLUE.'O'.RESET,
-		        @olh
-		      );
+    push @out,
+      sprintf(
+"%s %.02f (%+.02f) [%.01f%%] %s %.02f (%+.02f) [%.01f%%] %s %.02f (%+.02f) [%.01f%%]",
+        @olh );
 
     $d = shift @{$layout};
     push @out,
       sprintf( "%8s %8.02f (%+8.02f) | %8s %8.02f (%+8.02f) | %8s %7s",
         '24h max', $d->[0], $d->[1], '30d max', $d->[2], $d->[3],
-	       '24h vol', large_num( $d->[-1] ) );
+        '24h vol', large_num( $d->[-1] ) );
     $d = shift @{$layout};
     push @out,
       sprintf( "%8s %8.02f (%+8.02f) | %8s %8.02f (%+8.02f) | %8s %7s",
@@ -974,6 +1000,34 @@ sub html_out {
     push @{$latest_table}, th( $t_latest_rows->[0] );
     push @{$latest_table}, td( $t_latest_rows->[1] );
     push @{$latest_table}, td( $t_latest_rows->[2] );
+
+    my $olh_table;
+    push @{$olh_table}, th( [ 'Open', 'Low', 'High' ] );
+    push @{$olh_table},
+      td(
+        [
+            map { $D->{changes}->{hour}->{$_} }
+              ( 'open', 'hour_low', 'hour_high' )
+        ]
+      );
+    push @{$olh_table}, td(
+        [
+            map {
+                sprintf( "%.02f",
+                    $D->{ticker}->{last} - $D->{changes}->{hour}->{$_} )
+            } ( 'open', 'hour_low', 'hour_high' )
+        ]
+    );
+    push @{$olh_table}, td(
+        [
+            map {
+                sprintf( "%.01f%%",
+                    ( $D->{ticker}->{last} - $D->{changes}->{hour}->{$_} ) /
+                      $D->{changes}->{hour}->{$_} *
+                      100 )
+            } ( 'open', 'hour_low', 'hour_high' )
+        ]
+    );
 
     ### ==================================================
     my @t1_rows;
@@ -1277,6 +1331,8 @@ sub html_out {
 
     print table( {}, @t1_rows );
 
+    print h3("Hourly open, low, high");
+    print table( {}, Tr( {}, $olh_table ) );
     print h3("Changes from last updates (UTC times)");
 
     print table( {}, Tr( {}, $latest_table ) );
@@ -1287,9 +1343,9 @@ sub html_out {
         print h2('Current cryptocurrency "marketcaps"');
         print p(
 "A more correct term is aggregated value - it's the product of last price and outstanding coins or tokens."
-	       );
-	my $mcap_txt = large_num($D->{marketcap}->{total_mcap});
-	print h3("Total: $mcap_txt");
+        );
+        my $mcap_txt = large_num( $D->{marketcap}->{total_mcap} );
+        print h3("Total: $mcap_txt");
         print p(
             "Data from ",
             a( { href => "https://coinmarketcap.com/" }, "Coinmarketcap.com" )
