@@ -184,8 +184,6 @@ for my $r ( @{$result} ) {
     push @_10min, [ $r->[0], $r->[1], $latest->[1] - $r->[1] ];
 }
 
-my $ntl_diff = $_10min[1]->[2];
-
 ### last hour ticker data - hour open , max, min
 $sth = $dbh->prepare( $Sql{last_hour_ticker} );
 $rv  = $sth->execute();
@@ -193,7 +191,10 @@ warn DBI->errstr if $rv < 0;
 $result = $sth->fetchall_arrayref();
 
 #print Dumper $result;
+
 my $hour_open = $result->[0]->[0];
+
+my $ntl_diff = $latest->[1] - $hour_open;
 my @latest;
 foreach my $item (@$result) {
     push @latest, $item->[0];
@@ -892,25 +893,24 @@ sub console_out {
     my @olh;
     my %olh_translate = (
         open      => BLUE . 'O' . RESET,
-        hour_low  => RED . 'L' . RESET,
-        hour_high => GREEN . 'H' . RESET
+        hour_low  => 'Low',
+        hour_high => 'High',
     );
-    foreach my $tag ( 'open', 'hour_low', 'hour_high' ) {
-        push @olh,
-          (
+    foreach my $tag ( 'hour_low', 'hour_high' ) {
+        push @olh, (
             $olh_translate{$tag},
+
             $D->{changes}->{hour}->{$tag},
+
             $D->{ticker}->{last} - $D->{changes}->{hour}->{$tag},
             ( $D->{ticker}->{last} - $D->{changes}->{hour}->{$tag} ) /
               $D->{changes}->{hour}->{$tag} * 100,
-          );
+        );
 
     }
     push @out,
-      sprintf(
-"%s %.02f (%+.02f) [%.01f%%] %s %.02f (%+.02f) [%.01f%%] %s %.02f (%+.02f) [%.01f%%]",
+      sprintf( "%8s %8.02f (%+8.02f) [%.01f%%] %8s %8.02f (%+8.02f) [%.01f%%]",
         @olh );
-
     $d = shift @{$layout};
     push @out,
       sprintf( "%8s %8.02f (%+8.02f) | %8s %8.02f (%+8.02f) | %8s %7s",
