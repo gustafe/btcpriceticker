@@ -144,6 +144,8 @@ sub nformat;
 
 sub by_number;
 
+sub myfetchall;
+						
 ### OUTPUT FUNCTIONS ########################################
 
 my $api_down      = 0;
@@ -172,10 +174,10 @@ my $sth;
 my $rv;
 ### current price, from DB
 
-$sth = $dbh->prepare( $Sql{latest_price} );
-$rv  = $sth->execute();
-warn DBI->errstr if $rv < 0;
-my $result = $sth->fetchall_arrayref();
+#$sth = $dbh->prepare( $Sql{latest_price} );
+#$rv  = $sth->execute();
+#warn DBI->errstr if $rv < 0;
+my $result = myfetchall('latest_price'); #$sth->fetchall_arrayref();
 
 my $latest = $result->[0];
 
@@ -185,10 +187,10 @@ for my $r ( @{$result} ) {
 }
 
 ### last hour ticker data - hour open , max, min
-$sth = $dbh->prepare( $Sql{last_hour_ticker} );
-$rv  = $sth->execute();
-warn DBI->errstr if $rv < 0;
-$result = $sth->fetchall_arrayref();
+#$sth = $dbh->prepare( $Sql{last_hour_ticker} );
+#$rv  = $sth->execute();
+#warn DBI->errstr if $rv < 0;
+$result = myfetchall('last_hour_ticker');
 
 #print Dumper $result;
 
@@ -221,7 +223,7 @@ $Data->{changes}->{week} = {
     change_pct   => $latest->[12],
     change_price => $latest->[13]
 };
-$sth->finish();
+#$sth->finish();
 my $now = time();
 
 my $_24h_ref =
@@ -875,7 +877,7 @@ sub console_out {
 
     push @out,
       sprintf(
-        "   Last:  %s [%17s] | %34s (%s)",
+        "%8s %16s [%17s] | %34s (%s)", 'Last',
         BLUE . $last . RESET,
         $diff,
         epoch_to_parts( $d->[2] )->{std},
@@ -890,6 +892,11 @@ sub console_out {
     #         $hash->{change_pct} );
     # }
     # last hour
+
+    # Max     hour_high (diff)   24h_high
+    # Min     hour_low  (diff)   24h_low
+    # Spread  spread    [ pct]
+
     my @olh;
     my %olh_translate = (
         open      => BLUE . 'O' . RESET,
@@ -925,7 +932,8 @@ sub console_out {
     push @out,
       sprintf( "%8s %8.02f [%7.01f%%] | %8s %8.02f [%7.01f%%] | %8s %7s",
         'spread', $d->[0], $d->[1], 'spread', $d->[2], $d->[3],
-        'Coins', large_num( $d->[-1] ) );
+	       'Coins', large_num( $d->[-1] ) );
+    # final line with general info
 
     #print "\n";
     foreach my $line ( @{ $D->{history} } ) {
@@ -967,8 +975,8 @@ sub json_out {
     }
 
     my ($D) = @_;
-    delete $D->{debug};
-    delete $D->{layout};
+#    delete $D->{debug};
+#    delete $D->{layout};
 
     print header('application/json');
     print to_json( $D, { ascii => 1, pretty => 1 } );
@@ -1243,6 +1251,10 @@ sub html_out {
     ### =================================================
     my @draper = map { $D->{draper}->{$_} } qw/coins price_at_purchase/;
     my @past_events = (
+		       		       {
+			header=>"Price of a 2017 Lamborghini LP 750-4 SV Roadster",
+			content=>["The price of this car is \$535,500. The price in BTC is " . sprintf("%.05f BTC.", 535500/$last)]},
+
         {
             header  => "Tim Draper's coins from Silk Road",
             content => [
@@ -1391,7 +1403,7 @@ sub html_out {
     else {
         print table( {}, Tr( {}, $future_table ) );
     }
-
+    print "<a id='random'></a>";
     print h2("Random stats and figures");
 
     foreach my $item (@past_events) {
@@ -1546,3 +1558,13 @@ sub mcap_out {
     my $mcap_txt = large_num($total_mcap);
     print "  Total: $mcap_txt       Fetched: $fetched\n";
 }    # mcap_out
+
+sub myfetchall { # wrap fetchall_arrayref
+    my ( $sql ) = @_;
+    my $sth = $dbh->prepare( $Sql{ $sql } );
+    my $rv = $sth->execute();
+
+    warn DBI->errstr if $rv <0;
+
+    return $sth->fetchall_arrayref();
+}
