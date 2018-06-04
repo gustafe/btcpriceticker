@@ -1,8 +1,8 @@
 HOME=/home/gustaf
 BIN=$(HOME)/bin
-BUILD=$(HOME)/prj/BTCPriceTicker/About-page/build
+BUILD=$(HOME)/BTCPriceTicker/About-page/build
 MARKDOWN=$(BIN)/Markdown_1.0.1/Markdown.pl
-WWW=/www/gerikson.com/htdocs/btcticker
+WWW=$(HOME)/public_html/btcticker
 
 deploy: about.html
 	cp $(BUILD)/about.html $(WWW)/about.html

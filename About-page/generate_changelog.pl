@@ -7,7 +7,10 @@ while ( <DATA> ) {
     chomp;
     push @log, $_;
 }
-say "## Changelog";
+say "## Changelog\n";
+
+say "[Code repository at GitHub](https://github.com/gustafe/btcpriceticker).\n";
+
 foreach my $l ( reverse sort @log ) {
     say "* $l";
 }
