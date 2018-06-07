@@ -602,6 +602,7 @@ sub epoch_to_parts {
             $hour, $min, $sec
         );
     }
+    my $dt = DateTime->from_epoch(epoch=>$e);
     $out->{iso} = sprintf(
         "%04d-%02d-%02d %02d:%02d:%02d",
         $year + 1900,
@@ -609,6 +610,7 @@ sub epoch_to_parts {
     );
     $out->{ymd} = sprintf( "%04d-%02d-%02d", $year + 1900, $mon + 1, $mday );
     $out->{hms} = sprintf( "%02d:%02d:%02d", $hour,        $min,     $sec );
+    $out->{jd} = $dt->jd();
     return $out;
 }
 
@@ -1248,6 +1250,7 @@ sub html_out {
         push @{$future_table}, td($line);
     }
 
+    
     ### =================================================
     my @draper = map { $D->{draper}->{$_} } qw/coins price_at_purchase/;
     my @past_events = (
@@ -1403,7 +1406,23 @@ sub html_out {
     else {
         print table( {}, Tr( {}, $future_table ) );
     }
+
+    ### =================================================
+    # price >= 100K before 2018-12-31
+    my $now = epoch_to_parts(time())->{jd};
+    my $nye = datetime_to_parts('2018-12-31 23:59:59')->{jd};
+
+    if ($now <= $nye and $last <= 100_000) {
+
+	my $no_of_days = int($nye - $now);
+	my $rise_per_day = sprintf("%.02f",(100_000 - $last)/$no_of_days);
+	print "<a id='100k'></a>";
+	print h3("100K in 2018?");
+	print p("To reach the target price of \$100,000 USD per BTC before NYE 2018, the price will have to rise by \$$rise_per_day per day on average. There are $no_of_days days remaining in the year.");
+    }
+
     print "<a id='random'></a>";
+
     print h2("Random stats and figures");
 
     foreach my $item (@past_events) {
