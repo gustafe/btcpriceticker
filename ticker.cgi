@@ -145,7 +145,7 @@ sub nformat;
 sub by_number;
 
 sub myfetchall;
-						
+
 ### OUTPUT FUNCTIONS ########################################
 
 my $api_down      = 0;
@@ -177,7 +177,7 @@ my $rv;
 #$sth = $dbh->prepare( $Sql{latest_price} );
 #$rv  = $sth->execute();
 #warn DBI->errstr if $rv < 0;
-my $result = myfetchall('latest_price'); #$sth->fetchall_arrayref();
+my $result = myfetchall('latest_price');    #$sth->fetchall_arrayref();
 
 my $latest = $result->[0];
 
@@ -223,6 +223,7 @@ $Data->{changes}->{week} = {
     change_pct   => $latest->[12],
     change_price => $latest->[13]
 };
+
 #$sth->finish();
 my $now = time();
 
@@ -602,7 +603,7 @@ sub epoch_to_parts {
             $hour, $min, $sec
         );
     }
-    my $dt = DateTime->from_epoch(epoch=>$e);
+    my $dt = DateTime->from_epoch( epoch => $e );
     $out->{iso} = sprintf(
         "%04d-%02d-%02d %02d:%02d:%02d",
         $year + 1900,
@@ -610,7 +611,7 @@ sub epoch_to_parts {
     );
     $out->{ymd} = sprintf( "%04d-%02d-%02d", $year + 1900, $mon + 1, $mday );
     $out->{hms} = sprintf( "%02d:%02d:%02d", $hour,        $min,     $sec );
-    $out->{jd} = $dt->jd();
+    $out->{jd}  = $dt->jd();
     return $out;
 }
 
@@ -835,6 +836,7 @@ sub number_of_bitcoins {
 
 sub nformat {
     my ($in) = @_;
+
     my $nf = new Number::Format;
     return $nf->format_number( $in, 2, 2 );
 }
@@ -879,8 +881,8 @@ sub console_out {
 
     push @out,
       sprintf(
-        "%8s %16s [%17s] | %34s (%s)", 'Last',
-        BLUE . $last . RESET,
+        "%8s %16s [%17s] | %34s (%s)",
+        'Last', BLUE . $last . RESET,
         $diff,
         epoch_to_parts( $d->[2] )->{std},
         eta_time( $d->[3] )
@@ -934,7 +936,8 @@ sub console_out {
     push @out,
       sprintf( "%8s %8.02f [%7.01f%%] | %8s %8.02f [%7.01f%%] | %8s %7s",
         'spread', $d->[0], $d->[1], 'spread', $d->[2], $d->[3],
-	       'Coins', large_num( $d->[-1] ) );
+        'Coins', large_num( $d->[-1] ) );
+
     # final line with general info
 
     #print "\n";
@@ -977,8 +980,9 @@ sub json_out {
     }
 
     my ($D) = @_;
-#    delete $D->{debug};
-#    delete $D->{layout};
+
+    #    delete $D->{debug};
+    #    delete $D->{layout};
 
     print header('application/json');
     print to_json( $D, { ascii => 1, pretty => 1 } );
@@ -1250,13 +1254,51 @@ sub html_out {
         push @{$future_table}, td($line);
     }
 
-    
+    ### ==================================================
+
+    my $idiots_table;
+    my %predictions = (
+        '2018-12-31' => { target => 100_000, label => 'USD 100K by 2018', },
+        '2020-12-31' =>
+          { target => 1_000_000, label => 'USD 1M by 2020 (McAfee)', },
+        '2022-12-31' =>
+          { target => 250_000, label => 'USD 250K by 2022 (Draper)', },
+    );
+    push @{$idiots_table},
+      th(
+        [
+            'Prediction', 'Due', 'End price (USD)',
+            'Days left', "Avg price per day req'd (USD)"
+        ]
+      );
+    my $today = epoch_to_parts( time() )->{jd};
+    foreach my $date ( sort keys %predictions ) {
+        my $end          = datetime_to_parts( $date . ' 23:59:59' )->{jd};
+        my $end_date_str = datetime_to_parts( $date . ' 23:59:59' )->{str};
+        next
+          unless ( $today <= $end and $last <= $predictions{$date}->{target} );
+        my $no_of_days = int( $end - $today );
+        my $delta_day  = sprintf( "%.02f",
+            ( $predictions{$date}->{target} - $last ) / $no_of_days );
+        push @{$idiots_table},
+          td(
+            [
+                $predictions{$date}->{label},             $end_date_str,
+                large_num( $predictions{$date}->{target} ), $no_of_days,
+                nformat($delta_day),
+            ]
+          );
+    }
     ### =================================================
     my @draper = map { $D->{draper}->{$_} } qw/coins price_at_purchase/;
     my @past_events = (
-		       		       {
-			header=>"Price of a 2017 Lamborghini LP 750-4 SV Roadster",
-			content=>["The price of this car is \$535,500. The price in BTC is " . sprintf("%.05f BTC.", 535500/$last)]},
+        {
+            header  => "Price of a 2017 Lamborghini LP 750-4 SV Roadster",
+            content => [
+                "The price of this car is \$535,500. The price in BTC is "
+                  . sprintf( "%.05f BTC.", 535500 / $last )
+            ]
+        },
 
         {
             header  => "Tim Draper's coins from Silk Road",
@@ -1408,18 +1450,10 @@ sub html_out {
     }
 
     ### =================================================
-    # price >= 100K before 2018-12-31
-    my $now = epoch_to_parts(time())->{jd};
-    my $nye = datetime_to_parts('2018-12-31 23:59:59')->{jd};
-
-    if ($now <= $nye and $last <= 100_000) {
-
-	my $no_of_days = int($nye - $now);
-	my $rise_per_day = sprintf("%.02f",(100_000 - $last)/$no_of_days);
-	print "<a id='100k'></a>";
-	print h3("100K in 2018?");
-	print p("To reach the target price of \$100,000 USD per BTC before NYE 2018, the price will have to rise by \$$rise_per_day per day on average. There are $no_of_days days remaining in the year.");
-    }
+    # Dumb price predictions
+    print "<a id='predictions'></a>";
+    print h2("Price predictions made by various people");
+    print table( {}, Tr( {}, $idiots_table ) );
 
     print "<a id='random'></a>";
 
@@ -1578,12 +1612,12 @@ sub mcap_out {
     print "  Total: $mcap_txt       Fetched: $fetched\n";
 }    # mcap_out
 
-sub myfetchall { # wrap fetchall_arrayref
-    my ( $sql ) = @_;
-    my $sth = $dbh->prepare( $Sql{ $sql } );
-    my $rv = $sth->execute();
+sub myfetchall {    # wrap fetchall_arrayref
+    my ($sql) = @_;
+    my $sth   = $dbh->prepare( $Sql{$sql} );
+    my $rv    = $sth->execute();
 
-    warn DBI->errstr if $rv <0;
+    warn DBI->errstr if $rv < 0;
 
     return $sth->fetchall_arrayref();
 }
