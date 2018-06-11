@@ -174,9 +174,6 @@ my $sth;
 my $rv;
 ### current price, from DB
 
-#$sth = $dbh->prepare( $Sql{latest_price} );
-#$rv  = $sth->execute();
-#warn DBI->errstr if $rv < 0;
 my $result = myfetchall('latest_price');    #$sth->fetchall_arrayref();
 
 my $latest = $result->[0];
@@ -187,12 +184,7 @@ for my $r ( @{$result} ) {
 }
 
 ### last hour ticker data - hour open , max, min
-#$sth = $dbh->prepare( $Sql{last_hour_ticker} );
-#$rv  = $sth->execute();
-#warn DBI->errstr if $rv < 0;
 $result = myfetchall('last_hour_ticker');
-
-#print Dumper $result;
 
 my $hour_open = $result->[0]->[0];
 
@@ -261,7 +253,6 @@ $rv  = $sth->execute();
 warn DBI->errstr if $rv < 0;
 $historical_coins = $sth->fetchall_hashref(1);    # used in the sub
 
-# $Data->{scaffolding}->{historical_coins}= $historical_coins;
 $sth->finish();
 my $coins_now = number_of_bitcoins( DateTime->now->jd() );
 
@@ -535,8 +526,6 @@ $Data->{draper} = {
     win_loss          => ( $last - 600 ) * 29656.51306529
 };
 
-$dbh->disconnect();
-
 ### output options
 
 if ( $output eq 'json' ) {
@@ -557,6 +546,8 @@ elsif ( $output eq 'mcap' ) {
 else {
     html_out($Data);
 }
+
+$dbh->disconnect();
 
 ###############################################################################
 ### HELPER SUBROUTINES
@@ -888,19 +879,6 @@ sub console_out {
         eta_time( $d->[3] )
       );
 
-    # foreach my $period ( 'hour', 'week' ) {
-    #     my $hash = $D->{changes}->{$period};
-    #     push @out,
-    #       sprintf( "%8s %7.02f (%+8.02f) [%7.01f%%]",
-    #         $period, $hash->{open}, $hash->{change_price},
-    #         $hash->{change_pct} );
-    # }
-    # last hour
-
-    # Max     hour_high (diff)   24h_high
-    # Min     hour_low  (diff)   24h_low
-    # Spread  spread    [ pct]
-
     my @olh;
     my %olh_translate = (
         open      => BLUE . 'O' . RESET,
@@ -980,9 +958,6 @@ sub json_out {
     }
 
     my ($D) = @_;
-
-    #    delete $D->{debug};
-    #    delete $D->{layout};
 
     print header('application/json');
     print to_json( $D, { ascii => 1, pretty => 1 } );
@@ -1258,37 +1233,56 @@ sub html_out {
 
     my $idiots_table;
     my %predictions = (
-        '2018-12-31' => { target => 100_000, label => 'USD 100K by 2018', },
+        '2018-12-31' => { target => 100_000, label => 'USD 100k by 2018', },
         '2020-12-31' =>
           { target => 1_000_000, label => 'USD 1M by 2020 (McAfee)', },
         '2022-12-31' =>
-          { target => 250_000, label => 'USD 250K by 2022 (Draper)', },
+          { target => 250_000, label => 'USD 250k by 2022 (Draper)', },
     );
     push @{$idiots_table},
       th(
         [
-            'Prediction', 'Due', 'End price (USD)',
-            'Days left', "Avg price per day req'd (USD)"
+            'Prediction',
+            'Due',
+            'End price',
+            'Days left',
+            "Predicted rise / day",
+            "Previous change / day",
+            'Delta'
         ]
       );
     my $today = epoch_to_parts( time() )->{jd};
+    my $sth   = $dbh->prepare( $Sql{days_ago} );
+
     foreach my $date ( sort keys %predictions ) {
         my $end          = datetime_to_parts( $date . ' 23:59:59' )->{jd};
         my $end_date_str = datetime_to_parts( $date . ' 23:59:59' )->{str};
         next
-          unless ( $today <= $end and $last <= $predictions{$date}->{target} );
+          unless ( $today <= $end - 1
+            and $last <= $predictions{$date}->{target} );
         my $no_of_days = int( $end - $today );
         my $delta_day  = sprintf( "%.02f",
             ( $predictions{$date}->{target} - $last ) / $no_of_days );
-        push @{$idiots_table},
-          td(
+        my $rv = $sth->execute("-$no_of_days days");
+        warn DBI->errstr if $rv < 0;
+        my $average;
+
+        while ( my $aryref = $sth->fetchrow_arrayref ) {
+            $average = $aryref->[3];
+        }
+
+        push @{$idiots_table}, td(
             [
-                $predictions{$date}->{label},             $end_date_str,
+                $predictions{$date}->{label},               $end_date_str,
                 large_num( $predictions{$date}->{target} ), $no_of_days,
                 nformat($delta_day),
+                nformat( ( $last - $average ) / $no_of_days ),
+                nformat( $delta_day - ( $last - $average ) / $no_of_days ),
+
             ]
-          );
+        );
     }
+    $sth->finish();
     ### =================================================
     my @draper = map { $D->{draper}->{$_} } qw/coins price_at_purchase/;
     my @past_events = (
@@ -1455,6 +1449,9 @@ sub html_out {
     print h2("Price predictions made by various people");
     print table( {}, Tr( {}, $idiots_table ) );
 
+    print p(
+"This table tracks some future price predictions. The average price rise per day up until the target date is tracked, as well as the average change per day for the number of days in the past. This gives a very rough indicator of how the price has to change to achieve the target, compared to past performance."
+    );
     print "<a id='random'></a>";
 
     print h2("Random stats and figures");
