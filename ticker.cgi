@@ -1232,12 +1232,32 @@ sub html_out {
     ### ==================================================
 
     my $idiots_table;
+    # multiple predictions can be made for the same end date, so we need to
+    # wrap them in arrayrefs
     my %predictions = (
-        '2018-12-31' => { target => 100_000, label => 'USD 100k by 2018', },
+        '2018-12-31' => [
+            { target => 100_000, label => 'USD 100k by 2018', },
+            {
+                target => 50_000,
+                label  => 'USD 50k by end 2018 (@cryptomanran)',
+                added  => '2018-02-01'
+            }
+			],
+		       '2020-08-31'=>[{target=>100_000,label=>'USD 100k by Aug 2020 (4chan biz)',added=>'2018-06-23'},],
         '2020-12-31' =>
-          { target => 1_000_000, label => 'USD 1M by 2020 (McAfee)', },
+          [ { target => 1_000_000, label => 'USD 1M by 2020 (McAfee)', }, ],
         '2022-12-31' =>
-          { target => 250_000, label => 'USD 250k by 2022 (Draper)', },
+          [ { target => 250_000, label => 'USD 250k by 2022 (Draper)', }, ],
+        '2018-07-30' => [
+            {
+                target => 15_000,
+                label  => 'USD 15k by end Jul 2018 (McAfee)',
+                added  => '2018-06-13'
+            }
+			],
+		       '2018-07-06'=> [{target=>8_000,label=>'USD 8k by 6 Jul 2018 (Hashflare cloud mining liquidation)',added=>'2018-06-26' ,}],
+
+
     );
     push @{$idiots_table},
       th(
@@ -1257,30 +1277,33 @@ sub html_out {
     foreach my $date ( sort keys %predictions ) {
         my $end          = datetime_to_parts( $date . ' 23:59:59' )->{jd};
         my $end_date_str = datetime_to_parts( $date . ' 23:59:59' )->{str};
-        next
-          unless ( $today <= $end - 1
-            and $last <= $predictions{$date}->{target} );
-        my $no_of_days = int( $end - $today );
-        my $delta_day  = sprintf( "%.02f",
-            ( $predictions{$date}->{target} - $last ) / $no_of_days );
-        my $rv = $sth->execute("-$no_of_days days");
-        warn DBI->errstr if $rv < 0;
-        my $average;
+        foreach my $entry ( @{ $predictions{$date} } ) {
+            next
+              unless ( $today <= $end - 1
+                and $last <= $entry->{target} );
+            my $no_of_days = int( $end - $today );
 
-        while ( my $aryref = $sth->fetchrow_arrayref ) {
-            $average = $aryref->[3];
+            my $delta_day =
+              sprintf( "%.02f", ( $entry->{target} - $last ) / $no_of_days );
+            my $rv = $sth->execute("-$no_of_days days");
+            warn DBI->errstr if $rv < 0;
+            my $average;
+
+            while ( my $aryref = $sth->fetchrow_arrayref ) {
+                $average = $aryref->[3];
+            }
+
+            push @{$idiots_table}, td(
+                [
+                    $entry->{label},               $end_date_str,
+                    large_num( $entry->{target} ), $no_of_days,
+                    nformat($delta_day),
+                    nformat( ( $last - $average ) / $no_of_days ),
+                    nformat( $delta_day - ( $last - $average ) / $no_of_days ),
+
+                ]
+            );
         }
-
-        push @{$idiots_table}, td(
-            [
-                $predictions{$date}->{label},               $end_date_str,
-                large_num( $predictions{$date}->{target} ), $no_of_days,
-                nformat($delta_day),
-                nformat( ( $last - $average ) / $no_of_days ),
-                nformat( $delta_day - ( $last - $average ) / $no_of_days ),
-
-            ]
-        );
     }
     $sth->finish();
     ### =================================================
