@@ -16,8 +16,8 @@ use Getopt::Long;
 #### Connections
 my $update_future = 0;
 my $driver        = 'SQLite';
-my $database = '/home/www/gerikson.com/cgi-bin/data/historical-prices.db';
-my $dsn      = "DBI:$driver:dbname=$database";
+my $database      = '/home/www/gerikson.com/cgi-bin/data/historical-prices.db';
+my $dsn           = "DBI:$driver:dbname=$database";
 my ( $user, $pass ) = ( '', '' );
 my $dbh;
 my $sth;
@@ -48,8 +48,6 @@ sub get_ua {
 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'
     );
 
-    #    my $sig = signature();
-    #    $ua->default_header('X-Signature'=>$sig);
     return $ua;
 }
 my $ua = get_ua();
@@ -57,7 +55,7 @@ my $ua = get_ua();
 sub web_data {
     my ( $api_string, $param ) = @_;
 
-    warn "==> $base_url/$api_string\n";
+    print "querying $base_url/$api_string...\n";
 
     my $res = $ua->get("$base_url/$api_string");
     my $json;
@@ -65,12 +63,20 @@ sub web_data {
         warn "==> request failed!\n";
         warn $res->status_line . "\n";
         return undef;
-    } else {
+    }
+    else {
         $json = $res->decoded_content;
     }
 
     my $info = decode_json($json);
-    return $info->{$param};
+
+    if ( $api_string =~ /status/ ) {
+        return $info->{info}->{$param};
+    }
+    else {
+        return $info->{$param};
+    }
+
 }
 
 sub db_data {
@@ -81,7 +87,8 @@ sub db_data {
     my $data;
     if ( exists $options->{hashref} ) {
         $data = $sth->fetchall_hashref( $options->{hashref} );
-    } else {
+    }
+    else {
         $data = $sth->fetchall_arrayref();
     }
     $sth->finish();
@@ -91,29 +98,34 @@ sub db_data {
 sub pause_for {
     my ($seconds) = @_;
     die "can't pause for $seconds seconds, not a positive integer!\n"
-        unless $seconds =~ m/\d+/;
-    warn "==> pausing for $seconds seconds...\n";
+      unless $seconds =~ m/\d+/;
+    print "==> pausing for $seconds seconds...\n";
     sleep $seconds;
 }
 
 #### Init
 my $force = '';
 my $help  = '';
-GetOptions( 'force' => \$force,
-            'help'  => sub { print "Usage: $0 [--force]\n"; exit 0; } );
+GetOptions(
+    'force' => \$force,
+    'help'  => sub { print "Usage: $0 [--force]\n"; exit 0; }
+);
 my $interval = 140;    # around every day
 
 # Sql statements
 
-$Sql{'last_block'} = qq/select timestamp, block, no_of_coins from blocks where timestamp < datetime('now') order by timestamp desc limit 1/;
-$Sql{'last_3'} = qq/select julianday(timestamp), block, no_of_coins from blocks where timestamp < date('now') order by timestamp desc limit 3/;
-$Sql{'halvings'} = qq/select strftime('%s',timestamp),block,no_of_coins from blocks where timestamp >= datetime('now')/;
-$Sql{'list'}
-    = qq/select julianday(timestamp) as ts, block,no_of_coins as coins from blocks/;
+$Sql{'last_block'} =
+qq/select timestamp, block, no_of_coins from blocks where timestamp < datetime('now') order by timestamp desc limit 1/;
+$Sql{'last_3'} =
+qq/select julianday(timestamp), block, no_of_coins from blocks where timestamp < date('now') order by timestamp desc limit 3/;
+$Sql{'halvings'} =
+qq/select strftime('%s',timestamp),block,no_of_coins from blocks where timestamp >= datetime('now')/;
+$Sql{'list'} =
+  qq/select julianday(timestamp) as ts, block,no_of_coins as coins from blocks/;
 #### Main code
 
 $dbh = DBI->connect( $dsn, $user, $pass, { RaiseError => 1 } )
-    or die $DBI::errstr;
+  or die $DBI::errstr;
 my $last_block = db_data('last_block');
 my $target     = $last_block->[0]->[1] + $interval;
 
@@ -122,17 +134,17 @@ my $block_delta    = $last_3->[0]->[1] - $last_3->[2]->[1];
 my $day_delta      = $last_3->[0]->[0] - $last_3->[2]->[0];
 my $blocks_per_day = $block_delta / $day_delta;
 printf( " Avg blocks per day: %.2f (based on last 3 entries)\n",
-        $blocks_per_day );
+    $blocks_per_day );
 
 print "Getting current block count...\n";
-my $json = web_data( 'status?q=getBlockCount', 'blockcount' );
+my $json = web_data( 'status?q=getBlockCount', 'blocks' );
 die "Value returned from web service is not defined!" unless defined $json;
 if ( $json >= $target or $force ) {
     if ($force) {
         print "Force option, proceeding with update\n";
-    } else {
-        print
-            "we have newer mined block $json than target block $target...\n";
+    }
+    else {
+        print "we have newer mined block $json than target block $target...\n";
     }
     pause_for(5);
     my $current_block = $json;
@@ -147,15 +159,15 @@ if ( $json >= $target or $force ) {
     # insert into DB
 
     $sth = $dbh->prepare(
-         "insert into blocks (timestamp, block, no_of_coins) values (?,?,?)");
+        "insert into blocks (timestamp, block, no_of_coins) values (?,?,?)");
     print "Found block $current_block at time: ",
-        $dt->strftime('%Y-%m-%d %H:%M:%S'), "\n";
+      $dt->strftime('%Y-%m-%d %H:%M:%S'), "\n";
     print "      Number of coins for block is: ",
-        coins_per_block($current_block), "\n";
+      coins_per_block($current_block), "\n";
     print "Inserting into DB...\n";
 
     $sth->execute( $dt->strftime('%Y-%m-%d %H:%M:%S'),
-                   $current_block, coins_per_block($current_block) );
+        $current_block, coins_per_block($current_block) );
     $sth->finish;
 
     # update the dates for next halvings
@@ -169,29 +181,29 @@ if ( $json >= $target or $force ) {
         my ( $ts, $halving_block, $coins ) = @{$halving};
         next unless $halving_block % 210_000 == 0;
 
-       # compute the timestamp based on current rate and number of blocks left
+        # compute the timestamp based on current rate and number of blocks left
         my $blocks_left   = $halving_block - $current_block;
         my $standard_rate = 144;
         my $eta = time() + ( $blocks_left / $standard_rate ) * 24 * 3600;
         if ( $eta != $ts ) {
             print "New ETA for block $halving_block calculated: ",
-                scalar gmtime($eta), "\n";
+              scalar gmtime($eta), "\n";
             print "(Old ETA was: ", scalar gmtime($ts), ")\n";
             print "Diff: ", int( $eta - $ts ), "s\n";
 
             #	    next unless $update_future == 1;
             print "updating date for $halving_block\n";
             my $dt = DateTime->from_epoch( epoch => $eta );
-            $sth = $dbh->prepare(
-                               "update blocks set timestamp=? where block=?");
+            $sth = $dbh->prepare("update blocks set timestamp=? where block=?");
             my $rv = $sth->execute( $dt->strftime('%Y-%m-%d %H:%M:%S'),
-                                    $halving_block, );
+                $halving_block, );
             warn DBI->errstr if $rv < 0;
             $sth->finish;
         }
     }
 
-} else {
+}
+else {
     my $diff = $target - $json;
     print "Latest stored block: " . $last_block->[0]->[1] . "\n";
     print "       Target block: $target\n";

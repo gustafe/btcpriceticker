@@ -1256,6 +1256,7 @@ sub html_out {
             }
 			],
 		       '2018-07-06'=> [{target=>8_000,label=>'USD 8k by 6 Jul 2018 (Hashflare cloud mining liquidation)',added=>'2018-06-26' ,}],
+#		       '2030-12-31'=>[{target=>100_000_000,label=>'H Y P E R B I T C O I N I Z A T I O N',added=>'2018-06-27'},],
 
 
     );
