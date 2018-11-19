@@ -1241,9 +1241,14 @@ sub html_out {
                 target => 50_000,
                 label  => 'USD 50k by end 2018 (@cryptomanran)',
                 added  => '2018-02-01'
-            }
+            },
+			 { target => 15_000,
+			   label=>'USD 15k by end 2018 (Tom Lee)',
+			   added=>'2018-11-17'},
 			],
-		       '2020-08-31'=>[{target=>100_000,label=>'USD 100k by Aug 2020 (4chan biz)',added=>'2018-06-23'},],
+		       '2020-08-31'=>[{target=>100_000,label=>'USD 100k by Aug 2020 (4chan biz)',added=>'2018-06-23'},
+				      
+				     ],
         '2020-12-31' =>
           [ { target => 1_000_000, label => 'USD 1M by 2020 (McAfee)', }, ],
         '2022-12-31' =>
