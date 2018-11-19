@@ -144,7 +144,7 @@ if ( $json >= $target or $force ) {
         print "Force option, proceeding with update\n";
     }
     else {
-        print "we have newer mined block $json than target block $target...\n";
+        print "We have newer mined block $json than target block $target...\n";
     }
     pause_for(5);
     my $current_block = $json;
@@ -162,7 +162,7 @@ if ( $json >= $target or $force ) {
         "insert into blocks (timestamp, block, no_of_coins) values (?,?,?)");
     print "Found block $current_block at time: ",
       $dt->strftime('%Y-%m-%d %H:%M:%S'), "\n";
-    print "      Number of coins for block is: ",
+    print ' ' x 12 . "Number of coins for block is: ",
       coins_per_block($current_block), "\n";
     print "Inserting into DB...\n";
 
@@ -174,7 +174,7 @@ if ( $json >= $target or $force ) {
     $block_delta    = $current_block - $last_3->[1]->[1];
     $day_delta      = $dt->jd() - $last_3->[1]->[0];
     $blocks_per_day = $block_delta / $day_delta;
-    print "Blocks per day based on last 2 entries: $blocks_per_day\n";
+    printf( "Blocks per day based on last 2 entries: %.2f \n",$blocks_per_day);
 
     my $halvings = db_data('halvings');
     foreach my $halving ( @{$halvings} ) {
@@ -188,8 +188,8 @@ if ( $json >= $target or $force ) {
         if ( $eta != $ts ) {
             print "New ETA for block $halving_block calculated: ",
               scalar gmtime($eta), "\n";
-            print "(Old ETA was: ", scalar gmtime($ts), ")\n";
-            print "Diff: ", int( $eta - $ts ), "s\n";
+            print ' ' x 23 . "(Old ETA was: ", scalar gmtime($ts), ")\n";
+            print ' ' x 31 . "Diff: ", int( $eta - $ts ), "s\n";
 
             #	    next unless $update_future == 1;
             print "updating date for $halving_block\n";
