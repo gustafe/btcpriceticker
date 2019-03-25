@@ -41,7 +41,9 @@ if ( !$response->is_success ) {
 
     for my $el ( @{$info} ) {
         if ($el_count <= $no_of_coins_to_display
-            or $el->{symbol} eq 'BCH' )
+            or $el->{symbol} eq 'BCH'
+#	    or $el->{symbol} eq 'BCHSV'
+	   )
         {
             push @{$out}, $el;
             push @times, $el->{last_updated};
