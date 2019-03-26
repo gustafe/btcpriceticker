@@ -1380,7 +1380,8 @@ sub html_out {
             ]
         },
 
-    );
+		      );
+    my $api_message = "My API key has expired. This table will slowly lose data.";
 
     ### Output ########################################
 
@@ -1424,6 +1425,7 @@ sub html_out {
     print table( {}, Tr( {}, $latest_table ) );
 
     print h2("Current price compared to historical prices");
+    print h3({-class=>'redanniv'}, $api_message);
     print table( {}, Tr( {}, $hist_table ) );
     if ( $config->{show_cap_html} ) {
         print h2('Current cryptocurrency "marketcaps"');
@@ -1463,6 +1465,7 @@ sub html_out {
     }
     print "<a id='extrapolated'></a>";
     print h2("Historical prices compared to extrapolated trends");
+        print h3({-class=>'redanniv'}, $api_message);
     print table( {}, Tr( {}, $pred_table ) );
 
     print h2("Future prices based on linear trend from last 90 days");
