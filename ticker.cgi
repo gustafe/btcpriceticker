@@ -108,7 +108,8 @@ $Sql{'first_date'} =
 $Sql{'daily_min_max'} =
 qq/select min(p.last), max(p.last) from ticker p where p.timestamp > datetime('now','-1 day')/;
 $Sql{'monthly_min_max'} =
-qq/select min(h.low), max(h.high) from history h where h.timestamp > datetime('now', '-30 day')/;
+  # qq/select min(h.low), max(h.high) from history h where h.timestamp > datetime('now', '-30 day')/;
+  qq/ select min(low), max(high) from ticker where timestamp > datetime('now','-30 day')/;
 
 $Sql{'historical_coins'} =
 qq/select julianday(timestamp) as ts, block, no_of_coins as coins from blocks/;
