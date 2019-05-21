@@ -2,6 +2,7 @@
 
 Updated [about page](http://gerikson.com/btcticker/about.html).
 
+
 This web script reads current and historical prices from [Bitcoinaverage](https://bitcoinaverage.com/markets#USD) and presents the prices from some selected points in time.
 
 There's a "semi-logarithmic" timescale of 3 day, 1 week, 1 month (30 days), 6 months, and 1 year. In addition, price from 1 Jan of the current year, this year's high, and this year's low are included. 

@@ -108,9 +108,8 @@ $Sql{'first_date'} =
 $Sql{'daily_min_max'} =
 qq/select min(p.last), max(p.last) from ticker p where p.timestamp > datetime('now','-1 day')/;
 $Sql{'monthly_min_max'} =
-  # qq/select min(h.low), max(h.high) from history h where h.timestamp > datetime('now', '-30 day')/;
-  qq/ select min(low), max(high) from ticker where timestamp > datetime('now','-30 day')/;
-
+   qq/select min(h.low), max(h.high) from history h where h.timestamp > datetime('now', '-30 day')/;
+  
 $Sql{'historical_coins'} =
 qq/select julianday(timestamp) as ts, block, no_of_coins as coins from blocks/;
 
@@ -1426,7 +1425,7 @@ sub html_out {
     print table( {}, Tr( {}, $latest_table ) );
 
     print h2("Current price compared to historical prices");
-    print h3({-class=>'redanniv'}, $api_message);
+#    print h3({-class=>'redanniv'}, $api_message);
     print table( {}, Tr( {}, $hist_table ) );
     if ( $config->{show_cap_html} ) {
         print h2('Current cryptocurrency "marketcaps"');
@@ -1466,7 +1465,7 @@ sub html_out {
     }
     print "<a id='extrapolated'></a>";
     print h2("Historical prices compared to extrapolated trends");
-        print h3({-class=>'redanniv'}, $api_message);
+#        print h3({-class=>'redanniv'}, $api_message);
     print table( {}, Tr( {}, $pred_table ) );
 
     print h2("Future prices based on linear trend from last 90 days");

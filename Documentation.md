@@ -65,17 +65,20 @@
 
 ## Cron entries
 
-    16,46 * * * * perl /home/gustaf/prj/BTCPriceTicker/sql-fetch-24hr-data-populate-store.pl 
-    04 4 * * * perl /home/gustaf/prj/BTCPriceTicker/sql-fetch-all-time-data-populate-store.pl
-    14 4 * * * perl /home/gustaf/prj/BTCPriceTicker/sql-clean-database.pl
-    # grab price data every 3rd minute
-    */1 * * * * perl /home/gustaf/prj/BTCPriceTicker/sql-get-and-cache-price.pl
-    */12 * * * * perl /home/gustaf/prj/BTCPriceTicker/sql-fetch-price-volume-data-populate-store.pl
-    24 4 * * * perl /home/gustaf/prj/BTCPriceTicker/line-fit-data.pl
-    # check for new blocks for history 
-    7 7 * * Sun perl /home/gustaf/prj/BTCPriceTicker/blockexplorer-api/check-coins-update-store.pl
+	BTCLIB=/home/gustaf/BTCPriceTicker/btcaverage_apiv2
+	BTCBIN=/home/gustaf/BTCPriceTicker/
 
-
-
+    # refresh history once a day
+	04 4 * * * perl -I $BTCLIB $BTCBIN/populate-history-from-ticker.pl
+    # get price data every 1 minutes
+    */3 * * * * perl -I $BTCLIB $BTCBIN/btcaverage_apiv2/apiv2-fetch-latest-ticker-data.pl
+    # line fit data
+    24 4 * * * perl $BTCBIN/line-fit-data.pl
+    # get coinmarketcap data every 15 min
+    */15 * * * * perl -I $BTCLIB $BTCBIN/btcaverage_apiv2/coinmarketcap-fetch-data.pl
+    # clean DB
+    #14 4 * * * perl $BTCBIN/sql-clean-database.pl
+    # update date for next halving
+    24 3 */3 * * perl -I $BTCLIB $BTCBIN/blockexplorer-api/check-coins-update-store.pl
 
 
