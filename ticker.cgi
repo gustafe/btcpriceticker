@@ -1570,7 +1570,7 @@ sub mcap_out {
           $el->{'24h_volume_usd'} ? $el->{'24h_volume_usd'} : 'n/a';
 
         # some hackery for specific volumes and prices
-        if ( $name eq 'BTC' or $name eq 'BCH' or $name eq 'ETH' ) {
+        if ( $name eq 'BTC' or $name eq 'BCH' or $name eq 'BSV' ) {
             push @volumes,
               {
                 symbol  => $name,

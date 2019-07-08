@@ -75,8 +75,12 @@ sub web_data {
 
     my $info = decode_json($json);
 
-    return $info->{$param};
-
+    if ( $api_string =~ /status/ ) {
+        return $info->{info}->{$param};
+    }
+    else {
+        return $info->{$param};
+    }
 
 }
 
@@ -158,6 +162,13 @@ if ( $latest_id >= $target or $force ) {
     }
     my $current_block = $latest_id;
     my $dt = $strp->parse_datetime($latest_time);
+#    my ( $block_hash, $block_time, $dt ) = ( undef, undef, undef );
+#    $block_hash = web_data( "block-index/$current_block", 'blockHash' );
+#    die "can't get data for $current_block!" unless defined $block_hash;
+
+#    pause_for(4);
+#    $block_time = web_data( "block/$block_hash", 'time' );
+#    $dt = DateTime->from_epoch( epoch => $block_time );
 
     # insert into DB
 
@@ -207,7 +218,7 @@ if ( $latest_id >= $target or $force ) {
 
 }
 else {
-    my $diff = $target - $latest_id;
+    my $diff = $target - $json;
     print "Latest stored block: " . $last_block->[0]->[1] . "\n";
     print "       Target block: $target\n";
     print "   Last mined block: $latest_id\n";
