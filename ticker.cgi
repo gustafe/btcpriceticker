@@ -1326,7 +1326,8 @@ sub html_out {
             content => [
                 "The price of this car is \$535,500. The price in BTC is "
                   . sprintf( "%.05f BTC.", 535500 / $last )
-            ]
+		       ],
+	 anchor=>'lambo',
         },
 
         {
@@ -1342,8 +1343,10 @@ sub html_out {
                     large_num( $draper[0] * $last ) ),
                 sprintf( "Draper's win/loss: USD&nbsp;%s",
                     large_num( $draper[0] * ( $last - $draper[1] ) ) ),
-            ]
+		       ],
+	 anchor=>'draper',
         },
+		       
         {
             header  => "The Bitcoin pizza",
             content => [
@@ -1351,8 +1354,10 @@ sub html_out {
                 sprintf( "The Bitcoin pizza is currently worth USD&nbsp;%s.",
                     nformat( 10_000 * $last ) ),
 "See the <a href='https://twitter.com/bitcoin_pizza'>\@bitcoin_pizza</a> Twitter account for up-to-date values!",
-            ],
+		       ],
+	 anchor=>'pizza',
         },
+		       
         {
             header  => "The white Mini Cooper",
             content => [
@@ -1362,7 +1367,8 @@ sub html_out {
                 sprintf( "Today, the same car is worth USD&nbsp;%s.",
                     nformat( 14 * $last ) ),
 "(Source: <a href='https://twitter.com/aantonop/status/475048024453152768'>\@aantonop tweet</a>.)"
-            ],
+		       ],
+	 anchor=>'mini',
         },
         {
             header  => "2016 Bitfinex hack",
@@ -1370,15 +1376,21 @@ sub html_out {
 "On 2 Aug 2016, the exchange Bitfinex announced they had suffered a security breach and that 119,756 BTC were stolen.",
                 sprintf( "Current value of the stolen coins is USD&nbsp;%s.",
                     nformat( 119_756 * $last ) )
-            ],
+		       ],
+	 anchor=>'bitfinex',
         },
         {
             header  => "Price of a Leica Noctilux-M 75mm f/1.25 ASPH lens",
             content => [
 "The price of this lens was \$12,795 at announcement. The price of this lens in BTC is "
                   . sprintf( "%.05f BTC.", 12795 / $last )
-            ]
+		       ],
+	 anchor=>'leica',
         },
+		       {header=>"Value of the drug-dealer's fishing rod cap",
+			content =>["The convicted drug dealer Clifton Collins <a href='https://www.theguardian.com/world/2020/feb/21/irish-drug-dealer-clifton-collins-l46m-bitcoin-codes-hid-fishing-rod-case'>hid the codes to 6,000 BTC in a fishing rod cap that was thrown away when he was in jail</a>. The coins are now worth USD&nbsp;".sprintf("%s.",nformat(6_000*$last))],
+			anchor=>'fishing-rod',
+		       },
 
 		      );
     my $api_message = "My API key has expired. This table will slowly lose data.";
@@ -1495,6 +1507,10 @@ sub html_out {
     print h2("Random stats and figures");
 
     foreach my $item (@past_events) {
+	if (exists $item->{anchor}) {
+	    print "<a id='$item->{anchor}'></a>";
+#	    print a({id=>$item->{anchor}});
+	}
         print h3( $item->{header} );
         foreach my $line ( @{ $item->{content} } ) {
             print p($line);

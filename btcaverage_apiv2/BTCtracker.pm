@@ -49,7 +49,9 @@ sub get_dbh {
 sub get_ua {
     my $ua = LWP::UserAgent->new;
     my $sig = signature();
-    $ua->default_header('X-Signature'=>$sig);
+    #    $ua->default_header('X-Signature'=>$sig);
+    $ua->default_headers->header( 'X-Signature'=>$sig );
+#    $ua->default_headers->header( 'X-CMC_PRO_API_KEY'=>$cfg->param('CoinMarketCap.api_key'));
     return $ua;
 }
 
