@@ -119,7 +119,7 @@ $Sql{'marketcap'} =
 ### Other vars ########################################
 
 my $historical_coins;
-my $config = { show_cap_html => 1 };
+my $config = { show_cap_html => 0 };
 ### HELPER FUNCTIONS ########################################
 sub large_num;
 
@@ -1221,6 +1221,8 @@ sub html_out {
         }
     }
 
+
+    
     ### ==================================================
     my $future_table;
     my $K = $D->{scaffolding}->{coefficients}->{slope_30d};
@@ -1266,7 +1268,8 @@ sub html_out {
 		  added=>'2019-02-05'
 		}
 			],
-	'2018-07-06'=> [{target=>8_000,label=>'USD 8k by 6 Jul 2018 (Hashflare cloud mining liquidation)',added=>'2018-06-26' ,}],
+		       '2018-07-06'=> [{target=>8_000,label=>'USD 8k by 6 Jul 2018 (Hashflare cloud mining liquidation)',added=>'2018-06-26' ,}],
+		       '2021-11-01' => [{target=>130_000,label=>'USD 130k by Nov 2021 (BitcoinMarkets https://is.gd/em0EP2',added=>'2020-02-18',}],
 #		       '2030-12-31'=>[{target=>100_000_000,label=>'H Y P E R B I T C O I N I Z A T I O N',added=>'2018-06-27'},],
 
 
