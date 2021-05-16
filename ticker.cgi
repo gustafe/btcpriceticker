@@ -148,8 +148,8 @@ sub myfetchall;
 
 ### OUTPUT FUNCTIONS ########################################
 
-my $api_down      = 0;
-my $api_down_text = "Can't keep a good tracker down...";
+my $api_down      = 1;
+my $api_down_text = "Issues with the price API, investigating...";
 
 sub debug_out;
 
@@ -952,14 +952,15 @@ sub console_out {
 }    # console_out
 
 sub json_out {
-    if ($api_down) {
-        print $api_down_text;
-        return;
-    }
 
     my ($D) = @_;
 
     print header('application/json');
+    if ($api_down) {
+        print '{"'.$api_down_text.'"}';
+        return;
+    }
+
     print to_json( $D, { ascii => 1, pretty => 1 } );
 }    #json_out
 
@@ -1007,16 +1008,16 @@ sub html_out {
             } ( 'open', 'hour_low', 'hour_high' )
         ]
     );
-    push @{$olh_table}, td(
-        [
-            map {
-                sprintf( "%.01f%%",
-                    ( $D->{ticker}->{last} - $D->{changes}->{hour}->{$_} ) /
-                      $D->{changes}->{hour}->{$_} *
-                      100 )
-            } ( 'open', 'hour_low', 'hour_high' )
-        ]
-    );
+    # push @{$olh_table}, td(
+    #     [
+    #         map {
+    #             sprintf( "%.01f%%",
+    #                 ( $D->{ticker}->{last} - $D->{changes}->{hour}->{$_} ) /
+    #                   $D->{changes}->{hour}->{$_} *
+    #                   100 )
+    #         } ( 'open', 'hour_low', 'hour_high' )
+    #     ]
+    # );
 
     ### ==================================================
     my @t1_rows;
@@ -1415,7 +1416,7 @@ sub html_out {
             )
         ]
     );
-
+	print h2({-class=>'redanniv'}, "2021-05-16: The tracker is no longer updating") if $api_down;
     print h1( nformat($last) );
 
     print p(
@@ -1427,7 +1428,13 @@ sub html_out {
         ' Data from ',
         a( { href => "https://bitcoinaverage.com/" }, "Bitcoinaverage" ),
         '.'
-    );
+	   );
+    if ($api_down) {
+
+	print p("Recently, Bitcoinaverage has raised the minimum price for API access to \$12/mo. This is too much for me for a hobby project I'm already bored with. I'm making investigations into alternative data sources, but I'll probably mothball the site shortly.");
+	print p("Thanks to my loyal users. I know they're few, but they're out there and I appreciate it.");
+    }
+
 
     print h2("At a glance");
 
@@ -1537,6 +1544,11 @@ sub oneline_out {
     my ($D) = @_;
     my ( $hi, $lo ) = map { $D->{ticker}->{$_} } qw/24h_max 24h_min/;
     print header('text/plain');
+        if ($api_down) {
+        print '{"'.$api_down_text.'"}';
+        return;
+    }
+
     my $line = sprintf(
         "Last: \$%.02f [%+.02f] ",
         $D->{ticker}->{last},
