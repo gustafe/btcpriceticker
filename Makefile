@@ -2,9 +2,11 @@ HOME=/home/gustaf
 BIN=$(HOME)/BTCPriceTicker
 #BUILD=$(HOME)/prj/RegNr/build
 CGI=$(HOME)/cgi-bin
+TEMPLATES=$(BIN)/templates
 
-deploy: ticker.cgi
+deploy: ticker.cgi $(TEMPLATES)/tracker_rip.tt
 	cp $(BIN)/ticker.cgi $(CGI)/ticker.cgi
+	cp $(TEMPLATES)/tracker_rip.tt $(CGI)/templates/tracker_rip.tt
 
 .PHONY: test
 test: 

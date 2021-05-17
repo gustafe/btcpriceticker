@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>[% meta.page_title %]</title>
+<meta content="width=device-width, initial-scale=1" name="viewport" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+  body {font-family: Palatino, Palatino Linotype, Palatino LT STD, Book Antiqua, Georgia, serif;
+	background-color: #adb5bd;}
+
+  </style>
+</head>
+<body>
+<h1 style="text-align:center">[% meta.page_title %]</h1>
+[% USE Markdown -%]
+[% FILTER markdown %]
+[% content.farewell %]
+
+## Last price: [% content.last_price -%]
+
+### Last update: [% content.last_update -%]
+
+## Random stats and figures
+
+These are based on the price above!
+
+[% FOREACH entry IN content.past_events %]
+
+### [% entry.header -%]
+
+[% entry.content.join('
+
+') %]
+
+[% END %]
+[% END %]
+</body>
+
