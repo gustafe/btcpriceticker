@@ -69,3 +69,4 @@ about.html
 /About-page/build/*
 /ticker.json
 /sql-price-crossings.pl
+/analyzer-output.txt

@@ -500,7 +500,7 @@ foreach my $tag (
 
 my $marketcap_ref =
   $dbh->selectcol_arrayref( $Sql{marketcap}, { Columns => [ 1, 2 ] } );
-my $marketcap_data = decode_json( $marketcap_ref->[1] );
+my $marketcap_data = $api_down ? [] : decode_json( $marketcap_ref->[1] );
 my $marketcap_table;
 my $metadata = pop @{$marketcap_data};
 foreach my $entry ( @{$marketcap_data} ) {
