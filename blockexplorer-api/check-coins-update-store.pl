@@ -180,6 +180,9 @@ if ( $latest_id >= $target or $force ) {
     printf( "Blocks per day based on last 2 entries: %.2f \n",$blocks_per_day);
 
     my $halvings = db_data('halvings');
+    if (scalar @{$halvings}==0) {
+	print "There are no future blocks in the database.\nAdd an entry for the next halving block with the estimated timestamp\n and number of generated coins.\n".
+    }
     foreach my $halving ( @{$halvings} ) {
         my ( $ts, $halving_block, $coins ) = @{$halving};
         next unless $halving_block % 210_000 == 0;
@@ -191,8 +194,8 @@ if ( $latest_id >= $target or $force ) {
         if ( $eta != $ts ) {
             print "New ETA for block $halving_block calculated: ",
               scalar gmtime($eta), "\n";
-            print ' ' x 23 . "(Old ETA was: ", scalar gmtime($ts), ")\n";
-            print ' ' x 31 . "Diff: ", int( $eta - $ts ), "s\n";
+            print ' ' x 24 . "(Old ETA was: ", scalar gmtime($ts), ")\n";
+            print ' ' x 32 . "Diff: ", int( $eta - $ts ), "s\n";
 
             #	    next unless $update_future == 1;
             print "updating date for $halving_block\n";

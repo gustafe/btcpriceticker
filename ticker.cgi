@@ -12,7 +12,7 @@ use Template;
 use FindBin qw/$Bin/;
 use utf8;
 
-binmode( STDOUT, ":utf8" );
+binmode( STDOUT, ":encoding(UTF-8)" );
 
 sub nformat {
     my ($in) = @_;
@@ -102,8 +102,7 @@ my @past_events = (
             header  => "The Bitcoin pizza",
             content => [
 "On 22nd May 2010, Bitcoin enthusiast Laszlo Hanyec bought a pizza for 10,000 bitcoins. More specifically, he sent the coins to someone else who purchased the pizza for him.",
-                sprintf( "The Bitcoin pizza is currently worth USD&nbsp;%s.",
-                    nformat( 10_000 * $last ) ),
+                sprintf( "The Bitcoin pizza is currently worth USD&nbsp;%s (%s).", nformat( 10_000 * $last ), large_num(10_000 * $last) ),
 "See the <a href='https://twitter.com/bitcoin_pizza'>\@bitcoin_pizza</a> Twitter account for up-to-date values!",
 		       ],
 	 anchor=>'pizza',
@@ -113,7 +112,7 @@ my @past_events = (
             header  => "The white Mini Cooper",
             content => [
                 sprintf(
-"On 7 Jun 2014, Andreas M. Antonopoulos offered a white Mini Cooper for sale for 14BTC. At the time, the VWAP was USD&nbsp;652.76, so the sales price (assuming it went through) was USD&nbsp;%s.",
+"On 7 Jun 2014, Andreas M. Antonopoulos offered a white Mini Cooper for sale for 14 BTC. At the time, the VWAP was USD&nbsp;652.76, so the sales price (assuming it went through) was USD&nbsp;%s.",
                     nformat( 14 * 652.76 ) ),
                 sprintf( "Today, the same car is worth USD&nbsp;%s.",
                     nformat( 14 * $last ) ),
@@ -125,8 +124,8 @@ my @past_events = (
             header  => "2016 Bitfinex hack",
             content => [
 "On 2 Aug 2016, the exchange Bitfinex announced they had suffered a security breach and that 119,756 BTC were stolen.",
-                sprintf( "Current value of the stolen coins is USD&nbsp;%s.",
-                    nformat( 119_756 * $last ) )
+                sprintf( "Current value of the stolen coins is USD&nbsp;%s (%s).",
+                    nformat( 119_756 * $last ), large_num(119_756 * $last) )
 		       ],
 	 anchor=>'bitfinex',
         },
@@ -139,7 +138,7 @@ my @past_events = (
 	 anchor=>'leica',
         },
 		       {header=>"Value of the drug-dealer's fishing rod cap",
-			content =>["The convicted drug dealer Clifton Collins <a href='https://www.theguardian.com/world/2020/feb/21/irish-drug-dealer-clifton-collins-l46m-bitcoin-codes-hid-fishing-rod-case'>hid the codes to 6,000 BTC in a fishing rod cap that was thrown away when he was in jail</a>. The coins are now worth USD&nbsp;".sprintf("%s.",nformat(6_000*$last))],
+			content =>["The convicted drug dealer Clifton Collins <a href='https://www.theguardian.com/world/2020/feb/21/irish-drug-dealer-clifton-collins-l46m-bitcoin-codes-hid-fishing-rod-case'>hid the codes to 6,000 BTC in a fishing rod cap that was thrown away when he was in jail</a>. The coins are now worth USD&nbsp;".sprintf("%s (%s).",nformat(6_000*$last), large_num(6_000*$last))],
 			anchor=>'fishing-rod',
 		       },
 
@@ -156,6 +155,6 @@ my %data = ( meta     => { page_title => "World's slowest BTC tracker RIP 💀" 
 my $out = '';
 
 $out = header( { -type => 'text/html', -charset => 'utf-8' } );
-$tt->process( "tracker_rip.tt", \%data, \$out ) or die $tt->error;
-
-print $out;
+#$tt->process( "tracker_rip.tt", \%data, \$out ) or die $tt->error;
+print $query->redirect('http://gerikson.com/btcticker/index.html');
+#print $out;

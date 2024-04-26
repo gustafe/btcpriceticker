@@ -6,19 +6,23 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <style>
   body {font-family: Palatino, Palatino Linotype, Palatino LT STD, Book Antiqua, Georgia, serif;
-	background-color: #adb5bd;}
-
+	background-color: #EEEEEE;}
+    h2 {font-style: italic;
   </style>
 </head>
 <body>
 <h1 style="text-align:center">[% meta.page_title %]</h1>
 [% USE Markdown -%]
 [% FILTER markdown %]
-[% content.farewell %]
 
-## Last price: [% content.last_price -%]
+<h3><span style="color: #0000ff;">A new tracker is under development...(2021-05-21)</span> <a href="../btcticker/index.html">Preview (WIP!)</a></h3>
 
-### Last update: [% content.last_update -%]
+
+## Last price
+
+# [% content.last_price -%]
+
+<h3><span style="color: red">Last update: [% content.last_update -%]</span></h3>
 
 ## Random stats and figures
 

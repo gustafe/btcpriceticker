@@ -41,3 +41,4 @@ __DATA__
 2017-06-08: Shut down of first version service
 2017-06-14: <b>New API interface in development</b>
 2017-06-22: Official relaunch using new API and some new features, such as coin market cap data.
+2021-05-16: The tracker is on hiatus while a new source of data is found.
