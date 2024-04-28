@@ -1,0 +1,3 @@
+Low level client
+
+https://greg-kennedy.com/wordpress/2019/03/11/writing-a-websocket-client-in-perl-5/

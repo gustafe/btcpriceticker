@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use Modern::Perl;
 use DBI;
 use Text::CSV;
 use LWP::UserAgent;
@@ -27,7 +28,7 @@ my %Sql;
 my $strp = DateTime::Format::Strptime->new(
 					   pattern=>'%Y-%m-%d %H:%M:%S',
 					   on_error => 'croak' );
-
+my $debug =1;
 #### Helper subs
 
 sub coins_per_block {
@@ -181,24 +182,29 @@ if ( $latest_id >= $target or $force ) {
 
     my $halvings = db_data('halvings');
     if (scalar @{$halvings}==0) {
-	print "There are no future blocks in the database.\nAdd an entry for the next halving block with the estimated timestamp\n and number of generated coins.\n".
+	print "There are no future blocks in the database.\nAdd an entry for the next halving block with the estimated timestamp\n and number of generated coins.\n";
     }
     foreach my $halving ( @{$halvings} ) {
         my ( $ts, $halving_block, $coins ) = @{$halving};
         next unless $halving_block % 210_000 == 0;
-
+	if ($debug) {
+	    my $check_coins=coins_per_block($halving_block);
+	    say "     coins in DB: $coins";
+	    say "calculated coins: $check_coins";
+#	    exit 0;
+	}
         # compute the timestamp based on current rate and number of blocks left
         my $blocks_left   = $halving_block - $current_block;
         my $standard_rate = 144;
         my $eta = time() + ( $blocks_left / $standard_rate ) * 24 * 3600;
         if ( $eta != $ts ) {
-            print "New ETA for block $halving_block calculated: ",
+            print "New ETA for halving block $halving_block calculated: ",
               scalar gmtime($eta), "\n";
-            print ' ' x 24 . "(Old ETA was: ", scalar gmtime($ts), ")\n";
-            print ' ' x 32 . "Diff: ", int( $eta - $ts ), "s\n";
+            print ' ' x 32 . "(Old ETA was: ", scalar gmtime($ts), ")\n";
+            print ' ' x 40 . "Diff: ", int( $eta - $ts ), "s\n";
 
             #	    next unless $update_future == 1;
-            print "updating date for $halving_block\n";
+            print "updating date for halving block: $halving_block\n";
             my $dt = DateTime->from_epoch( epoch => $eta );
             $sth = $dbh->prepare("update blocks set timestamp=? where block=?");
             my $rv = $sth->execute( $dt->strftime('%Y-%m-%d %H:%M:%S'),

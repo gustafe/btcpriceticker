@@ -1,0 +1,87 @@
+{
+  data   => {
+              1 => {
+                     circulating_supply => 18713700,
+                     cmc_rank           => 1,
+                     date_added         => "2013-04-28T00:00:00.000Z",
+                     id                 => 1,
+                     is_active          => 1,
+                     is_fiat            => 0,
+                     last_updated       => "2021-05-19T19:28:02.000Z",
+                     max_supply         => 21000000,
+                     name               => "Bitcoin",
+                     num_market_pairs   => 9552,
+                     platform           => undef,
+                     quote              => {
+                                             USD => {
+                                                      last_updated => "2021-05-19T19:28:02.000Z",
+                                                      market_cap => 722763634724.828,
+                                                      percent_change_1h => 0.20906464,
+                                                      percent_change_24h => -9.69078578,
+                                                      percent_change_30d => -30.6774251,
+                                                      percent_change_60d => -35.09877947,
+                                                      percent_change_7d => -28.78866627,
+                                                      percent_change_90d => -25.5406503,
+                                                      price => 38622.1663660756,
+                                                      volume_24h => 123180152850.313,
+                                                    },
+                                           },
+                     slug               => "bitcoin",
+                     symbol             => "BTC",
+                     tags               => [
+                                             "mineable",
+                                             "pow",
+                                             "sha-256",
+                                             "store-of-value",
+                                             "state-channels",
+                                             "coinbase-ventures-portfolio",
+                                             "three-arrows-capital-portfolio",
+                                             "polychain-capital-portfolio",
+                                             "binance-labs-portfolio",
+                                             "arrington-xrp-capital",
+                                             "blockchain-capital-portfolio",
+                                             "boostvc-portfolio",
+                                             "cms-holdings-portfolio",
+                                             "dcg-portfolio",
+                                             "dragonfly-capital-portfolio",
+                                             "electric-capital-portfolio",
+                                             "fabric-ventures-portfolio",
+                                             "framework-ventures",
+                                             "galaxy-digital-portfolio",
+                                             "huobi-capital",
+                                             "alameda-research-portfolio",
+                                             "a16z-portfolio",
+                                             "1confirmation-portfolio",
+                                             "winklevoss-capital",
+                                             "usv-portfolio",
+                                             "placeholder-ventures-portfolio",
+                                             "pantera-capital-portfolio",
+                                             "multicoin-capital-portfolio",
+                                             "paradigm-xzy-screener",
+                                           ],
+                     total_supply       => 18713700,
+                   },
+            },
+  status => {
+              credit_count  => 1,
+              elapsed       => 15,
+              error_code    => 0,
+              error_message => undef,
+              notice        => undef,
+              timestamp     => "2021-05-19T19:29:17.115Z",
+            },
+}
+Use of uninitialized value in say at ./mojo-ua.pl line 32.
+Use of uninitialized value in say at ./mojo-ua.pl line 32.
+Use of uninitialized value in say at ./mojo-ua.pl line 32.
+Use of uninitialized value in say at ./mojo-ua.pl line 32.
+Use of uninitialized value in say at ./mojo-ua.pl line 32.
+Use of uninitialized value in say at ./mojo-ua.pl line 32.
+Use of uninitialized value in say at ./mojo-ua.pl line 32.
+price: 
+volume_24h: 
+percent_change_1h: 
+percent_change_24h: 
+percent_change_7d: 
+percent_change_30d: 
+percent_change_60d: 

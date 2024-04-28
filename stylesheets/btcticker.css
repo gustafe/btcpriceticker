@@ -1,0 +1,85 @@
+body {
+background: #073642;
+margin-top: 2%;
+margin-left: 2%;
+color: #839496;
+font-family: Calibri, Helvetica, Arial, sans-serif;
+
+}
+a { color: #268bd2; }
+a:visited { color: #6c71c4; }
+h2.redanniv { color: #dc322f; }
+h3.redanniv { color: #dc322f; }
+.indent { text-indent: 50px; }
+table {
+    /* width: 45%; */
+    }
+
+table, th {
+    border: 1px solid #839496;
+    border-collapse: collapse;
+    text-align: right;
+    }
+
+th, td {
+    padding: 5px;
+/*    width: 175px; */
+    padding-left: 20px;
+    padding-right: 10px;
+}
+
+th {
+    text-align: center;
+    }
+
+td {
+    font-family: Andale Mono, Courier New, monospace;
+    }
+
+.negative { color: #dc322f;}
+.positive { color: #859900;}
+
+.future {
+/*    text-align: right; */
+    }
+
+ul.prices { width: 40%;
+     margin-right: 40%;
+     text-align: right;
+     list-style-type: none;
+     }
+
+/* http://ethanschoonover.com/solarize
+$base03:    #002b36;
+$base02:    #073642;
+$base01:    #586e75;
+$base00:    #657b83;
+$base0:     #839496;
+$base1:     #93a1a1;
+$base2:     #eee8d5;
+$base3:     #fdf6e3;
+$yellow:    #b58900;
+$orange:    #cb4b16;
+$red:       #dc322f;
+$magenta:   #d33682;
+$violet:    #6c71c4;
+$blue:      #268bd2;
+$cyan:      #2aa198;
+$green:     #859900;
+*/
+
+/* 
+font-family: Andale Mono, Courier New, monospace;
+}
+h1 {text-align: center;}
+caption { font-size: 150%; font-weight: bold;}
+a { color: #268bd2; }
+a:visited { color: #6c71c4; }
+#footer { position: fixed; bottom: 0; }
+table { width:45%; }
+th {font-style: italic;}
+td {font-size: 125%; }
+.current_price{ font-weight: bolder;} 
+.negative { color: #dc322f;}
+.pricedisplay { font-weight: bolder; }
+*/
